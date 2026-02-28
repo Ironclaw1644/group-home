@@ -39,18 +39,15 @@ a {
 .reveal {
   opacity: 0;
   transform: translateY(8px);
-  filter: blur(2px);
   transition:
     opacity 360ms ease-out,
-    transform 360ms ease-out,
-    filter 360ms ease-out;
+    transform 360ms ease-out;
   will-change: opacity, transform;
 }
 
 .reveal.is-visible {
   opacity: 1;
   transform: translateY(0);
-  filter: blur(0);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -62,7 +59,6 @@ a {
   .reveal.is-visible {
     opacity: 1;
     transform: none;
-    filter: none;
     transition: none;
   }
 }

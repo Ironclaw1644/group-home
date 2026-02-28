@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ElementType, type ReactNode } from 'react';
+import { useEffect, useRef, type ElementType, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 type RevealProps = {
@@ -11,41 +11,67 @@ type RevealProps = {
   as?: ElementType;
 };
 
+type RevealElement = HTMLElement & { dataset: DOMStringMap };
+
+const revealCallbacks = new Map<Element, (entry: IntersectionObserverEntry) => void>();
+let sharedObserver: IntersectionObserver | null = null;
+
+function getSharedObserver() {
+  if (sharedObserver || typeof window === 'undefined') return sharedObserver;
+
+  sharedObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        revealCallbacks.get(entry.target)?.(entry);
+      }
+    },
+    { threshold: 0.12, rootMargin: '0px 0px -10% 0px' }
+  );
+
+  return sharedObserver;
+}
+
 export function Reveal({ children, className, delayMs = 0, once = true, as: Tag = 'div' }: RevealProps) {
   const ref = useRef<HTMLElement | null>(null);
-  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const element = ref.current;
+    const element = ref.current as RevealElement | null;
     if (!element) return;
 
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      setVisible(true);
+      element.classList.add('is-visible');
       return;
     }
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            setVisible(true);
-            if (once) observer.unobserve(entry.target);
-          } else if (!once) {
-            setVisible(false);
-          }
-        }
-      },
-      { threshold: 0.15, rootMargin: '0px 0px -8% 0px' }
-    );
+    const observer = getSharedObserver();
+    if (!observer) return;
 
+    // Performance: shared observer + direct class mutation avoids React re-renders while scrolling.
+    const callback = (entry: IntersectionObserverEntry) => {
+      if (entry.isIntersecting) {
+        element.classList.add('is-visible');
+        if (once) {
+          observer.unobserve(element);
+          revealCallbacks.delete(element);
+        }
+      } else if (!once) {
+        element.classList.remove('is-visible');
+      }
+    };
+
+    revealCallbacks.set(element, callback);
     observer.observe(element);
-    return () => observer.disconnect();
+
+    return () => {
+      revealCallbacks.delete(element);
+      observer.unobserve(element);
+    };
   }, [once]);
 
   return (
     <Tag
       ref={ref}
-      className={cn('reveal', visible && 'is-visible', className)}
+      className={cn('reveal', className)}
       style={{ transitionDelay: `${delayMs}ms` }}
     >
       {children}

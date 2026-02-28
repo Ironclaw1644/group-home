@@ -7,14 +7,14 @@ export function SiteFooter() {
     <footer className="mt-16 border-t border-brand-navy/10 bg-white/75">
       <div className="container-shell grid gap-8 py-10 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 md:gap-2.5">
             <Image
               src="/brand/logo.png"
               alt="At Home Family Services, LLC"
-              width={44}
-              height={44}
-              sizes="44px"
-              className="h-11 w-11 rounded-full object-contain"
+              width={40}
+              height={40}
+              sizes="40px"
+              className="h-10 w-10 rounded-full object-contain"
               loading="lazy"
             />
             <p className="font-semibold tracking-tight text-brand-navy">{business.name}</p>

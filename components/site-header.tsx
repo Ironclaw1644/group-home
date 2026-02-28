@@ -7,14 +7,14 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-white/70 bg-white/85 backdrop-blur-md">
       <div className="container-shell flex items-center justify-between gap-2 py-2.5 md:gap-3 md:py-3">
-        <Link href="/" className="flex min-w-0 items-center gap-1.5 md:gap-2">
+        <Link href="/" className="flex min-w-0 flex-1 items-center gap-2 md:gap-2.5">
           <Image
             src="/brand/logo.png"
             alt="At Home Family Services, LLC"
             width={44}
             height={44}
-            sizes="(max-width: 768px) 36px, 44px"
-            className="h-9 w-9 shrink-0 rounded-full object-contain md:h-11 md:w-11"
+            sizes="(max-width: 768px) 40px, 44px"
+            className="h-10 w-10 shrink-0 rounded-full object-contain md:h-11 md:w-11"
             priority
           />
           <span className="min-w-0 self-center">

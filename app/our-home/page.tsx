@@ -39,13 +39,13 @@ export default async function OurHomePage() {
     <>
       <PageHero title="A comfortable, modern home environment" description="Our home is designed to support daily routines, calm living, and quality of life. Families can request a tour to learn more about the environment and support approach." />
       <Section title="Home amenities" description="Features families often ask about during placement and tour calls.">
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {['3 bedrooms', '2.5 bathrooms', 'Updated appliances', 'Modern hardwood flooring', 'Backyard wellness space', 'Structured routines', 'Clean shared spaces', 'Support-focused environment'].map((item, idx) => (
-            <Reveal key={item} delayMs={idx * 40}>
-              <Card><p className="text-sm font-medium text-brand-navy">{item}</p></Card>
-            </Reveal>
-          ))}
-        </div>
+        <Reveal>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {['3 bedrooms', '2.5 bathrooms', 'Updated appliances', 'Modern hardwood flooring', 'Backyard wellness space', 'Structured routines', 'Clean shared spaces', 'Support-focused environment'].map((item) => (
+              <Card key={item}><p className="text-sm font-medium text-brand-navy">{item}</p></Card>
+            ))}
+          </div>
+        </Reveal>
         <Reveal className="mt-6">
           <OurHomeCarousel slides={ourHomeSlides} />
         </Reveal>

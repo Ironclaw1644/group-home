@@ -94,15 +94,15 @@ export default async function HomePage() {
       </Section>
 
       <Section title="Home highlights" description="Three bedrooms, 2.5 bath, updated appliances, modern hardwood flooring, and a backyard/outdoor wellness space.">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {homeHighlights.map((img, idx) => (
-            <Reveal key={img.id} delayMs={idx * 70}>
-              <Card className="overflow-hidden p-0">
+        <Reveal>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {homeHighlights.map((img) => (
+              <Card key={img.id} className="overflow-hidden p-0">
                 <Image src={img.src} alt={img.alt} width={1000} height={700} className="h-52 w-full object-cover" />
               </Card>
-            </Reveal>
-          ))}
-        </div>
+            ))}
+          </div>
+        </Reveal>
         <div className="mt-6 flex flex-wrap gap-3">
           <Button href="/our-home" variant="ghost">View Our Home</Button>
           <Button href="/requirements" variant="secondary">Review Requirements</Button>
