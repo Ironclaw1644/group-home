@@ -1,16 +1,35 @@
 import { buildMetadata } from '@/lib/site';
 import { PageHero } from '@/components/page-hero';
 import { Section, Card, Button } from '@/components/ui';
-import { SiteImageGrid } from '@/components/site-image-grid';
-import { dbGet } from '@/lib/storage';
+import { OurHomeCarousel } from '@/components/our-home-carousel';
 
 export const metadata = buildMetadata({ title: 'Our Home | At Home Family Services, LLC', path: '/our-home', description: 'View our home amenities, living spaces, and supportive environment in North Chesterfield, VA.' });
 export const dynamic = 'force-dynamic';
 
+const ourHomeSlides = [
+  {
+    src: '/images/ahfs/our-home/AHFS_our_home_house.png',
+    alt: 'Exterior of our home'
+  },
+  {
+    src: '/images/ahfs/our-home/AHFS_our_home_living_room.png',
+    alt: 'Comfortable living room'
+  },
+  {
+    src: '/images/ahfs/our-home/AHFS_our_home_bed_1.png',
+    alt: 'Bedroom with twin beds'
+  },
+  {
+    src: '/images/ahfs/our-home/AHFS_our_home_bed_2.png',
+    alt: 'Bedroom interior'
+  },
+  {
+    src: '/images/ahfs/our-home/AHFS_our_home_bed_3.png',
+    alt: 'Bedroom interior'
+  }
+] as const;
+
 export default async function OurHomePage() {
-  const gallery = await dbGet('gallery');
-  const ourHomeImages = gallery.filter((img) => img.section === 'our-home');
-  const images = ourHomeImages.length ? ourHomeImages : gallery;
   return (
     <>
       <PageHero title="A comfortable, modern home environment" description="Our home is designed to support daily routines, calm living, and quality of life. Families can request a tour to learn more about the environment and support approach." />
@@ -21,7 +40,7 @@ export default async function OurHomePage() {
           ))}
         </div>
         <div className="mt-6">
-          <SiteImageGrid images={images.slice(0, 6)} />
+          <OurHomeCarousel slides={ourHomeSlides} />
         </div>
         <div className="mt-6 flex gap-3"><Button href="/tour">Request a Tour</Button><Button href="/placement-inquiry" variant="ghost">Placement Inquiry</Button></div>
       </Section>
