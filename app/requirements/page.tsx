@@ -13,7 +13,7 @@ export default function RequirementsPage() {
           <Card><h3 className="font-semibold text-brand-navy">Eligibility</h3><ul className="mt-3 space-y-2 text-sm text-brand-slate"><li>• Adult age 18+</li><li>• Developmental disorder diagnosis</li><li>• Support needs appropriate for our home environment</li></ul></Card>
           <Card><h3 className="font-semibold text-brand-navy">Coverage</h3><ul className="mt-3 space-y-2 text-sm text-brand-slate"><li>• Acceptable insurance/coverage required</li><li>• Medicaid waiver, private pay, or other options may be discussed</li><li>• Final verification occurs during intake screening</li></ul></Card>
         </div>
-        <div className="mt-6 flex flex-wrap gap-3"><Button href="/placement-inquiry">Start Placement Inquiry</Button><Button href="/faq" variant="ghost">Read FAQ</Button></div>
+        <div className="mt-6 flex flex-wrap gap-3"><Button href="/placement-inquiry" trackCta="placement-inquiry">Start Placement Inquiry</Button><Button href="/faq" variant="ghost">Read FAQ</Button></div>
       </Section>
     </>
   );

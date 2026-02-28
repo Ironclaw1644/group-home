@@ -4,6 +4,7 @@ import { Suspense, useMemo, useRef, useState, type FormEvent } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui';
 import { buildLeadMessage } from '@/lib/forms';
+import { trackEvent } from '@/lib/track-client';
 
 type ExtraField = {
   name: string;
@@ -232,6 +233,7 @@ function LeadFormInner({
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data?.error || 'Submission failed');
       setSuccess(true);
+      trackEvent({ event_type: 'form_submit', form_name: leadType, page_path: pathname || undefined, ...utmMeta });
       onSubmitted?.();
       statusRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       if (successRedirect) {

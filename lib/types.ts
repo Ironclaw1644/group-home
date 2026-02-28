@@ -19,21 +19,6 @@ export type Announcement = {
   updated_at: string;
 };
 
-export type PageBlock = {
-  key: string;
-  label: string;
-  value: string;
-  updated_at: string;
-};
-
-export type GalleryImage = {
-  id: string;
-  url: string;
-  alt: string;
-  section: 'general' | 'our-home' | 'announcements';
-  credit?: string;
-};
-
 export type Subscriber = {
   id: string;
   email: string;
@@ -71,4 +56,22 @@ export type LocalLead = {
   leadops_forwarded_at?: string;
   leadops_error?: string;
   notes_count?: number;
+};
+
+export type ActivityEventType = 'page_view' | 'cta_click' | 'form_submit';
+
+export type ActivityEventPayload = {
+  event_type: ActivityEventType;
+  page_path?: string;
+  referrer?: string;
+  utm_source?: string;
+  utm_medium?: string;
+  utm_campaign?: string;
+  utm_term?: string;
+  utm_content?: string;
+  device?: 'mobile' | 'desktop' | 'tablet' | 'unknown';
+  city?: string;
+  session_id?: string;
+  cta_name?: string;
+  form_name?: string;
 };

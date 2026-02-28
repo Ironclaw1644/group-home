@@ -2,19 +2,71 @@
 
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
-import type { Announcement, GalleryImage, LocalLead, PageBlock, Subscriber } from '@/lib/types';
-import { Button, Card, Badge } from '@/components/ui';
+import type { Announcement, LocalLead, Subscriber } from '@/lib/types';
+import { Badge, Button, Card } from '@/components/ui';
 
 type LeadRecord = LocalLead & { _notes?: { id: string; note: string; created_at: string }[] };
 
 type InitialState = {
   announcements: Announcement[];
-  pages: PageBlock[];
-  gallery: GalleryImage[];
   subscribers: Subscriber[];
 };
 
-const tabs = ['leads', 'announcements', 'pages', 'gallery', 'subscribers', 'activity'] as const;
+type ActivityData = {
+  rangeDays: 7 | 30 | 90;
+  overview: {
+    totalVisits: number;
+    uniqueSessions: number;
+    placementInquiries: number;
+    tourRequests: number;
+    conversionRate: number;
+    callsClicked: number;
+  };
+  topPages: Array<{
+    page: string;
+    views: number;
+    ctaClicks: number;
+    conversions: number;
+    conversionRate: number;
+  }>;
+  topEntryPages: Array<{ page: string; visits: number }>;
+  topExitPages: Array<{ page: string; visits: number }>;
+  trafficSources: Array<{
+    source: string;
+    utmCampaign: string;
+    device: string;
+    city: string;
+    visits: number;
+    conversions: number;
+  }>;
+  deviceBreakdown: {
+    mobile: number;
+    desktop: number;
+    tablet: number;
+  };
+  topCities: Array<{
+    city: string;
+    visits: number;
+    conversions: number;
+    conversionRate: number;
+  }>;
+  funnel: {
+    visits: number;
+    ctaClicks: number;
+    formStarted: number | null;
+    formSubmitted: number;
+  };
+  utmPerformance: Array<{
+    utmSource: string;
+    utmMedium: string;
+    utmCampaign: string;
+    visits: number;
+    conversions: number;
+    conversionRate: number;
+  }>;
+};
+
+const tabs = ['leads', 'announcements', 'subscribers', 'activity'] as const;
 type Tab = (typeof tabs)[number];
 
 export function AdminDashboard({
@@ -38,10 +90,12 @@ export function AdminDashboard({
   const [total, setTotal] = useState(0);
   const [pageSize] = useState(20);
   const [announcements, setAnnouncements] = useState(initial.announcements);
-  const [pageBlocks, setPageBlocks] = useState(initial.pages);
-  const [gallery, setGallery] = useState(initial.gallery);
   const [subscribers, setSubscribers] = useState(initial.subscribers);
   const [leadNoteDraft, setLeadNoteDraft] = useState('');
+  const [activityDays, setActivityDays] = useState<7 | 30 | 90>(30);
+  const [activityData, setActivityData] = useState<ActivityData | null>(null);
+  const [loadingActivity, setLoadingActivity] = useState(false);
+  const [activityError, setActivityError] = useState<string | null>(null);
 
   async function fetchLeads() {
     setLoadingLeads(true);
@@ -72,25 +126,39 @@ export function AdminDashboard({
     }
   }
 
+  async function fetchActivity(days: 7 | 30 | 90) {
+    setLoadingActivity(true);
+    setActivityError(null);
+    try {
+      const res = await fetch(`/api/admin/activity?days=${days}`);
+      if (res.status === 401) {
+        window.location.href = '/admin/login';
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load activity analytics');
+      setActivityData(data as ActivityData);
+    } catch (error) {
+      setActivityData(null);
+      setActivityError(error instanceof Error ? error.message : 'Failed to load activity analytics');
+    } finally {
+      setLoadingActivity(false);
+    }
+  }
+
   useEffect(() => {
     fetchLeads();
   }, [status, q, page, pageSize, leadTypeFilter]);
 
-  const activity = useMemo(() => {
-    const byDate = new Map<string, number>();
-    const bySource = new Map<string, number>();
-    for (const lead of leads) {
-      const date = String(lead.created_at || '').slice(0, 10) || 'unknown';
-      byDate.set(date, (byDate.get(date) || 0) + 1);
-      const source = String(lead.utm_source || 'direct');
-      const campaign = String(lead.utm_campaign || 'none');
-      bySource.set(`${source}/${campaign}`, (bySource.get(`${source}/${campaign}`) || 0) + 1);
-    }
-    return {
-      byDate: [...byDate.entries()].sort((a, b) => a[0].localeCompare(b[0])).slice(-14),
-      bySource: [...bySource.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10)
-    };
-  }, [leads]);
+  useEffect(() => {
+    if (tab !== 'activity') return;
+    fetchActivity(activityDays);
+  }, [tab, activityDays]);
+
+  const leadCountLabel = useMemo(() => {
+    if (loadingLeads) return 'Loading leads…';
+    return `${leads.length} leads shown`;
+  }, [loadingLeads, leads.length]);
 
   async function saveAnnouncement(formData: FormData) {
     const payload = {
@@ -100,10 +168,17 @@ export function AdminDashboard({
       active: formData.get('active') === 'on',
       start_date: String(formData.get('start_date') || ''),
       end_date: String(formData.get('end_date') || ''),
-      target_pages: String(formData.get('target_pages') || '').split(',').map((x) => x.trim()).filter(Boolean),
+      target_pages: String(formData.get('target_pages') || '')
+        .split(',')
+        .map((x) => x.trim())
+        .filter(Boolean),
       priority: Number(formData.get('priority') || 0)
     };
-    const res = await fetch('/api/admin/announcements', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const res = await fetch('/api/admin/announcements', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
     const item = await res.json();
     if (res.ok) setAnnouncements((prev) => [item, ...prev.filter((a) => a.id !== item.id)]);
   }
@@ -113,33 +188,6 @@ export function AdminDashboard({
     if (res.ok) setAnnouncements((prev) => prev.filter((a) => a.id !== id));
   }
 
-  async function savePageBlocks() {
-    const res = await fetch('/api/admin/pages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ items: pageBlocks.map(({ key, label, value }) => ({ key, label, value })) })
-    });
-    if (res.ok) setPageBlocks(await res.json());
-  }
-
-  async function saveGalleryItem(formData: FormData) {
-    const payload = {
-      id: String(formData.get('id') || ''),
-      url: String(formData.get('url') || ''),
-      alt: String(formData.get('alt') || ''),
-      section: String(formData.get('section') || 'general'),
-      credit: String(formData.get('credit') || '')
-    };
-    const res = await fetch('/api/admin/gallery', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    const item = await res.json();
-    if (res.ok) setGallery((prev) => [item, ...prev.filter((g) => g.id !== item.id)]);
-  }
-
-  async function deleteGallery(id: string) {
-    const res = await fetch(`/api/admin/gallery?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
-    if (res.ok) setGallery((prev) => prev.filter((g) => g.id !== id));
-  }
-
   async function addSubscriber(formData: FormData) {
     const payload = {
       email: String(formData.get('email') || ''),
@@ -147,7 +195,11 @@ export function AdminDashboard({
       source: String(formData.get('source') || 'admin'),
       opted_in: true
     };
-    const res = await fetch('/api/admin/subscribers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const res = await fetch('/api/admin/subscribers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
     const item = await res.json();
     if (res.ok) setSubscribers((prev) => [item, ...prev.filter((s) => s.id !== item.id)]);
   }
@@ -163,7 +215,11 @@ export function AdminDashboard({
     const item = await res.json();
     if (res.ok) {
       setSelectedLead((prev) => (prev ? { ...prev, _notes: [item, ...((prev._notes as any[]) || [])] } : prev));
-      setLeads((prev) => prev.map((l) => String(l.id || '') === leadId ? { ...l, _notes: [item, ...((l._notes as any[]) || [])] } : l));
+      setLeads((prev) =>
+        prev.map((lead) =>
+          String(lead.id || '') === leadId ? { ...lead, _notes: [item, ...((lead._notes as any[]) || [])] } : lead
+        )
+      );
       setLeadNoteDraft('');
     }
   }
@@ -208,15 +264,30 @@ export function AdminDashboard({
           <p className="mt-1 text-sm text-brand-slate">Signed in as {adminEmail}</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <a href="/api/admin/export/leads" className="rounded-xl border border-brand-navy/10 bg-white px-3 py-2 text-sm font-medium">Export Leads CSV</a>
-          <a href="/api/admin/export/subscribers" className="rounded-xl border border-brand-navy/10 bg-white px-3 py-2 text-sm font-medium">Export Subscribers CSV</a>
-          <button onClick={logout} className="rounded-xl bg-brand-navy px-3 py-2 text-sm font-semibold text-white">Logout</button>
+          <a href="/api/admin/export/leads" className="rounded-xl border border-brand-navy/10 bg-white px-3 py-2 text-sm font-medium">
+            Export Leads CSV
+          </a>
+          <a
+            href="/api/admin/export/subscribers"
+            className="rounded-xl border border-brand-navy/10 bg-white px-3 py-2 text-sm font-medium"
+          >
+            Export Subscribers CSV
+          </a>
+          <button onClick={logout} className="rounded-xl bg-brand-navy px-3 py-2 text-sm font-semibold text-white">
+            Logout
+          </button>
         </div>
       </div>
 
       <div className="mb-5 flex gap-2 overflow-x-auto pb-1">
         {tabs.map((t) => (
-          <button key={t} onClick={() => setTab(t)} className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold ${tab === t ? 'bg-brand-navy text-white' : 'bg-white text-brand-slate border border-brand-navy/10'}`}>
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold ${
+              tab === t ? 'bg-brand-navy text-white' : 'border border-brand-navy/10 bg-white text-brand-slate'
+            }`}
+          >
             {t[0].toUpperCase() + t.slice(1)}
           </button>
         ))}
@@ -225,295 +296,560 @@ export function AdminDashboard({
       {initialLoadError ? (
         <p className="mb-5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           Admin data could not be loaded. You can still access the dashboard, but CMS sections may be empty until connectivity/env issues are resolved.
-          <span className="block mt-1 text-amber-800">{initialLoadError}</span>
+          <span className="mt-1 block text-amber-800">{initialLoadError}</span>
         </p>
       ) : null}
 
       <div className="w-full max-w-full overflow-x-hidden">
-      {tab === 'leads' && (
-        <div className="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
-          <Card>
-            <div className="grid gap-3 md:grid-cols-5">
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name/email/message" className="md:col-span-2 rounded-xl border border-brand-navy/10 px-3 py-2 text-sm" />
-              <input value={status} onChange={(e) => setStatus(e.target.value)} placeholder="status" className="rounded-xl border border-brand-navy/10 px-3 py-2 text-sm" />
-              <select value={leadTypeFilter} onChange={(e) => setLeadTypeFilter(e.target.value)} className="rounded-xl border border-brand-navy/10 px-3 py-2 text-sm"><option value="">All lead types</option><option value="placement">placement</option><option value="tour">tour</option><option value="general">general</option><option value="career">career</option></select>
-              <div className="rounded-xl border border-brand-navy/10 px-3 py-2 text-xs text-brand-slate">Page {page} • {total} total</div>
-            </div>
-            <div className="mt-4 flex items-center justify-between">
-              <p className="text-sm text-brand-slate">{loadingLeads ? 'Loading leads…' : `${leads.length} leads shown`}</p>
-              <div className="flex gap-2">
-                <button onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded-lg border px-3 py-1.5 text-sm">Prev</button>
-                <button onClick={() => setPage((p) => p + 1)} className="rounded-lg border px-3 py-1.5 text-sm">Next</button>
+        {tab === 'leads' && (
+          <div className="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
+            <Card>
+              <div className="grid gap-3 md:grid-cols-5">
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Search name/email/message"
+                  className="rounded-xl border border-brand-navy/10 px-3 py-2 text-sm md:col-span-2"
+                />
+                <input
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  placeholder="status"
+                  className="rounded-xl border border-brand-navy/10 px-3 py-2 text-sm"
+                />
+                <select
+                  value={leadTypeFilter}
+                  onChange={(e) => setLeadTypeFilter(e.target.value)}
+                  className="rounded-xl border border-brand-navy/10 px-3 py-2 text-sm"
+                >
+                  <option value="">All lead types</option>
+                  <option value="placement">placement</option>
+                  <option value="tour">tour</option>
+                  <option value="general">general</option>
+                  <option value="career">career</option>
+                </select>
+                <div className="rounded-xl border border-brand-navy/10 px-3 py-2 text-xs text-brand-slate">
+                  Page {page} • {total} total
+                </div>
               </div>
-            </div>
-            {leadError ? <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{leadError}</p> : null}
+              <div className="mt-4 flex items-center justify-between">
+                <p className="text-sm text-brand-slate">{leadCountLabel}</p>
+                <div className="flex gap-2">
+                  <button onClick={() => setPage((p) => Math.max(1, p - 1))} className="rounded-lg border px-3 py-1.5 text-sm">
+                    Prev
+                  </button>
+                  <button onClick={() => setPage((p) => p + 1)} className="rounded-lg border px-3 py-1.5 text-sm">
+                    Next
+                  </button>
+                </div>
+              </div>
+              {leadError ? <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{leadError}</p> : null}
 
-            <div className="mt-4 space-y-3 md:hidden">
-              {leads.map((lead) => {
-                return (
-                  <button key={lead.id} onClick={() => setSelectedLead(lead)} className="w-full rounded-2xl border border-brand-navy/10 bg-white p-4 text-left">
+              <div className="mt-4 space-y-3 md:hidden">
+                {leads.map((lead) => {
+                  return (
+                    <button
+                      key={lead.id}
+                      onClick={() => setSelectedLead(lead)}
+                      className="w-full rounded-2xl border border-brand-navy/10 bg-white p-4 text-left"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="font-semibold text-brand-navy">{lead.contact_name || 'Unknown'}</p>
+                          <p className="text-xs text-brand-slate">{lead.contact_email || ''}</p>
+                        </div>
+                        <Badge>{lead.forwarded_to_leadops ? 'Forwarded' : 'Not forwarded'}</Badge>
+                      </div>
+                      <p className="mt-2 text-xs text-brand-slate">
+                        {lead.lead_type || 'unknown'} • {lead.status || 'new'} • notes {lead.notes_count || 0}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="mt-4 hidden overflow-x-auto md:block">
+                <table className="min-w-full text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-brand-navy/10 text-xs uppercase tracking-wider text-brand-slate">
+                      <th className="px-2 py-2">Created</th>
+                      <th className="px-2 py-2">Contact</th>
+                      <th className="px-2 py-2">Type</th>
+                      <th className="px-2 py-2">Status</th>
+                      <th className="px-2 py-2">Forwarded</th>
+                      <th className="px-2 py-2">Notes</th>
+                      <th className="px-2 py-2">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leads.map((lead) => {
+                      return (
+                        <tr key={lead.id} className="border-b border-brand-navy/5">
+                          <td className="px-2 py-2">{lead.created_at?.slice(0, 10)}</td>
+                          <td className="px-2 py-2">
+                            <div className="font-medium">{lead.contact_name || 'Unknown'}</div>
+                            <div className="text-xs text-brand-slate">
+                              {lead.contact_email || ''} • {lead.contact_phone || ''}
+                            </div>
+                          </td>
+                          <td className="px-2 py-2">{lead.lead_type || ''}</td>
+                          <td className="px-2 py-2">{lead.status || ''}</td>
+                          <td className="px-2 py-2">{lead.forwarded_to_leadops ? 'yes' : 'no'}</td>
+                          <td className="px-2 py-2">{lead.notes_count || 0}</td>
+                          <td className="px-2 py-2">
+                            <button onClick={() => setSelectedLead(lead)} className="text-brand-teal">
+                              View
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+
+            <Card>
+              <h2 className="text-lg font-semibold text-brand-navy">Lead Detail</h2>
+              {!selectedLead ? (
+                <p className="mt-3 text-sm text-brand-slate">Select a lead to view details and local notes.</p>
+              ) : (
+                <div className="mt-3 space-y-4 text-sm">
+                  <div className="grid gap-2">
+                    <DetailRow label="Name" value={selectedLead.contact_name} />
+                    <DetailRow label="Email" value={selectedLead.contact_email} />
+                    <DetailRow label="Phone" value={selectedLead.contact_phone} />
+                    <DetailRow label="Lead Type" value={selectedLead.lead_type} />
+                    <DetailRow label="Status" value={selectedLead.status} />
+                    <DetailRow label="Forwarded to LeadOps" value={selectedLead.forwarded_to_leadops ? 'yes' : 'no'} />
+                    <DetailRow label="LeadOps Error" value={selectedLead.leadops_error || ''} />
+                    <DetailRow label="Created" value={selectedLead.created_at || ''} />
+                  </div>
+                  {selectedLead.leadops_error ? (
+                    <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700">
+                      LeadOps forward error: {selectedLead.leadops_error}
+                    </p>
+                  ) : null}
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="text-xs text-brand-slate">
+                      Status
+                      <select
+                        value={selectedLead.status || 'new'}
+                        onChange={(e) => patchLead(selectedLead.id, { status: e.target.value })}
+                        className="mt-1 w-full rounded-xl border border-brand-navy/10 px-3 py-2 text-sm"
+                      >
+                        <option value="new">new</option>
+                        <option value="contacted">contacted</option>
+                        <option value="qualified">qualified</option>
+                        <option value="closed">closed</option>
+                      </select>
+                    </label>
+                    <label className="text-xs text-brand-slate">
+                      Lead Type
+                      <select
+                        value={selectedLead.lead_type || ''}
+                        onChange={(e) => patchLead(selectedLead.id, { lead_type: e.target.value })}
+                        className="mt-1 w-full rounded-xl border border-brand-navy/10 px-3 py-2 text-sm"
+                      >
+                        <option value="">unset</option>
+                        <option value="placement">placement</option>
+                        <option value="tour">tour</option>
+                        <option value="general">general</option>
+                        <option value="career">career</option>
+                      </select>
+                    </label>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-brand-navy">Message</p>
+                    <pre className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap rounded-xl bg-brand-sand p-3 text-xs text-brand-navy">
+                      {String(selectedLead.message || '')}
+                    </pre>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-brand-navy">Notes</p>
+                    <div className="mt-2 space-y-2">
+                      {(((selectedLead._notes as any[]) || [])).map((note) => (
+                        <div key={note.id} className="rounded-xl border border-brand-navy/10 bg-white p-3">
+                          <p>{note.note}</p>
+                          <p className="mt-1 text-xs text-brand-slate">{note.created_at}</p>
+                        </div>
+                      ))}
+                      {!((selectedLead._notes as any[]) || []).length ? (
+                        <p className="text-xs text-brand-slate">No notes yet.</p>
+                      ) : null}
+                    </div>
+                    <textarea
+                      value={leadNoteDraft}
+                      onChange={(e) => setLeadNoteDraft(e.target.value)}
+                      placeholder="Add local note"
+                      className="mt-3 min-h-24 w-full rounded-xl border border-brand-navy/10 px-3 py-2"
+                    />
+                    <button onClick={addNote} className="mt-2 rounded-xl bg-brand-teal px-3 py-2 text-sm font-semibold text-white">
+                      Save Note
+                    </button>
+                  </div>
+                </div>
+              )}
+            </Card>
+          </div>
+        )}
+
+        {tab === 'announcements' && (
+          <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
+            <Card>
+              <h2 className="text-lg font-semibold">Add / Edit Announcement</h2>
+              <form action={saveAnnouncement} className="mt-4 space-y-3">
+                <input type="hidden" name="id" />
+                <input name="title" placeholder="Title" className="w-full rounded-xl border px-3 py-2" required />
+                <textarea name="body" placeholder="Body" className="min-h-28 w-full rounded-xl border px-3 py-2" required />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <input name="start_date" type="date" className="rounded-xl border px-3 py-2" />
+                  <input name="end_date" type="date" className="rounded-xl border px-3 py-2" />
+                  <input name="target_pages" placeholder="/,/tour" className="rounded-xl border px-3 py-2" />
+                  <input name="priority" type="number" placeholder="Priority" className="rounded-xl border px-3 py-2" defaultValue={1} />
+                </div>
+                <label className="flex items-center gap-2 text-sm">
+                  <input name="active" type="checkbox" defaultChecked /> Active
+                </label>
+                <Button type="submit">Save Announcement</Button>
+              </form>
+            </Card>
+            <Card>
+              <h2 className="text-lg font-semibold">Current Announcements</h2>
+              <div className="mt-4 space-y-3">
+                {[...announcements].sort((a, b) => a.priority - b.priority).map((announcement) => (
+                  <div key={announcement.id} className="rounded-2xl border border-brand-navy/10 p-4">
                     <div className="flex items-start justify-between gap-2">
                       <div>
-                        <p className="font-semibold text-brand-navy">{lead.contact_name || 'Unknown'}</p>
-                        <p className="text-xs text-brand-slate">{lead.contact_email || ''}</p>
+                        <p className="font-semibold text-brand-navy">{announcement.title}</p>
+                        <p className="mt-1 text-xs text-brand-slate">
+                          priority {announcement.priority} • {announcement.active ? 'active' : 'inactive'}
+                        </p>
                       </div>
-                      <Badge>{lead.forwarded_to_leadops ? 'Forwarded' : 'Not forwarded'}</Badge>
+                      <button onClick={() => deleteAnnouncementById(announcement.id)} className="text-sm text-rose-600">
+                        Delete
+                      </button>
                     </div>
-                    <p className="mt-2 text-xs text-brand-slate">{lead.lead_type || 'unknown'} • {lead.status || 'new'} • notes {lead.notes_count || 0}</p>
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="mt-4 hidden overflow-x-auto md:block">
-              <table className="min-w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-brand-navy/10 text-xs uppercase tracking-wider text-brand-slate">
-                    <th className="px-2 py-2">Created</th>
-                    <th className="px-2 py-2">Contact</th>
-                    <th className="px-2 py-2">Type</th>
-                    <th className="px-2 py-2">Status</th>
-                    <th className="px-2 py-2">Forwarded</th>
-                    <th className="px-2 py-2">Notes</th>
-                    <th className="px-2 py-2">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {leads.map((lead) => {
-                    return (
-                      <tr key={lead.id} className="border-b border-brand-navy/5">
-                        <td className="px-2 py-2">{lead.created_at?.slice(0, 10)}</td>
-                        <td className="px-2 py-2"><div className="font-medium">{lead.contact_name || 'Unknown'}</div><div className="text-xs text-brand-slate">{lead.contact_email || ''} • {lead.contact_phone || ''}</div></td>
-                        <td className="px-2 py-2">{lead.lead_type || ''}</td>
-                        <td className="px-2 py-2">{lead.status || ''}</td>
-                        <td className="px-2 py-2">{lead.forwarded_to_leadops ? 'yes' : 'no'}</td>
-                        <td className="px-2 py-2">{lead.notes_count || 0}</td>
-                        <td className="px-2 py-2"><button onClick={() => setSelectedLead(lead)} className="text-brand-teal">View</button></td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-
-          <Card>
-            <h2 className="text-lg font-semibold text-brand-navy">Lead Detail</h2>
-            {!selectedLead ? <p className="mt-3 text-sm text-brand-slate">Select a lead to view details, parsed meta, and local notes.</p> : (
-              <div className="mt-3 space-y-4 text-sm">
-                <div className="grid gap-2">
-                  <DetailRow label="Name" value={selectedLead.contact_name} />
-                  <DetailRow label="Email" value={selectedLead.contact_email} />
-                  <DetailRow label="Phone" value={selectedLead.contact_phone} />
-                  <DetailRow label="Lead Type" value={selectedLead.lead_type} />
-                  <DetailRow label="Status" value={selectedLead.status} />
-                  <DetailRow label="Forwarded to LeadOps" value={selectedLead.forwarded_to_leadops ? 'yes' : 'no'} />
-                  <DetailRow label="LeadOps Error" value={selectedLead.leadops_error || ''} />
-                  <DetailRow label="Created" value={selectedLead.created_at || ''} />
-                </div>
-                {selectedLead.leadops_error ? (
-                  <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700">
-                    LeadOps forward error: {selectedLead.leadops_error}
-                  </p>
-                ) : null}
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <label className="text-xs text-brand-slate">Status
-                    <select
-                      value={selectedLead.status || 'new'}
-                      onChange={(e) => patchLead(selectedLead.id, { status: e.target.value })}
-                      className="mt-1 w-full rounded-xl border border-brand-navy/10 px-3 py-2 text-sm"
-                    >
-                      <option value="new">new</option>
-                      <option value="contacted">contacted</option>
-                      <option value="qualified">qualified</option>
-                      <option value="closed">closed</option>
-                    </select>
-                  </label>
-                  <label className="text-xs text-brand-slate">Lead Type
-                    <select
-                      value={selectedLead.lead_type || ''}
-                      onChange={(e) => patchLead(selectedLead.id, { lead_type: e.target.value })}
-                      className="mt-1 w-full rounded-xl border border-brand-navy/10 px-3 py-2 text-sm"
-                    >
-                      <option value="">unset</option>
-                      <option value="placement">placement</option>
-                      <option value="tour">tour</option>
-                      <option value="general">general</option>
-                      <option value="career">career</option>
-                    </select>
-                  </label>
-                </div>
-                <div>
-                  <p className="font-semibold text-brand-navy">Message</p>
-                  <pre className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap rounded-xl bg-brand-sand p-3 text-xs text-brand-navy">{String(selectedLead.message || '')}</pre>
-                </div>
-                <div>
-                  <p className="font-semibold text-brand-navy">Notes</p>
-                  <div className="mt-2 space-y-2">
-                    {(((selectedLead._notes as any[]) || [])).map((note) => <div key={note.id} className="rounded-xl bg-white p-3 border border-brand-navy/10"><p>{note.note}</p><p className="mt-1 text-xs text-brand-slate">{note.created_at}</p></div>)}
-                    {!((selectedLead._notes as any[]) || []).length ? <p className="text-xs text-brand-slate">No notes yet.</p> : null}
-                  </div>
-                  <textarea value={leadNoteDraft} onChange={(e) => setLeadNoteDraft(e.target.value)} placeholder="Add local note" className="mt-3 min-h-24 w-full rounded-xl border border-brand-navy/10 px-3 py-2" />
-                  <button onClick={addNote} className="mt-2 rounded-xl bg-brand-teal px-3 py-2 text-sm font-semibold text-white">Save Note</button>
-                </div>
-              </div>
-            )}
-          </Card>
-        </div>
-      )}
-
-      {tab === 'announcements' && (
-        <div className="grid gap-5 xl:grid-cols-[0.9fr_1.1fr]">
-          <Card>
-            <h2 className="text-lg font-semibold">Add / Edit Announcement</h2>
-            <form action={saveAnnouncement} className="mt-4 space-y-3">
-              <input type="hidden" name="id" />
-              <input name="title" placeholder="Title" className="w-full rounded-xl border px-3 py-2" required />
-              <textarea name="body" placeholder="Body" className="min-h-28 w-full rounded-xl border px-3 py-2" required />
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input name="start_date" type="date" className="rounded-xl border px-3 py-2" />
-                <input name="end_date" type="date" className="rounded-xl border px-3 py-2" />
-                <input name="target_pages" placeholder="/,/tour" className="rounded-xl border px-3 py-2" />
-                <input name="priority" type="number" placeholder="Priority" className="rounded-xl border px-3 py-2" defaultValue={1} />
-              </div>
-              <label className="flex items-center gap-2 text-sm"><input name="active" type="checkbox" defaultChecked /> Active</label>
-              <Button type="submit">Save Announcement</Button>
-            </form>
-          </Card>
-          <Card>
-            <h2 className="text-lg font-semibold">Current Announcements</h2>
-            <div className="mt-4 space-y-3">
-              {[...announcements].sort((a, b) => a.priority - b.priority).map((a) => (
-                <div key={a.id} className="rounded-2xl border border-brand-navy/10 p-4">
-                  <div className="flex items-start justify-between gap-2"><div><p className="font-semibold text-brand-navy">{a.title}</p><p className="mt-1 text-xs text-brand-slate">priority {a.priority} • {a.active ? 'active' : 'inactive'}</p></div><button onClick={() => deleteAnnouncementById(a.id)} className="text-sm text-rose-600">Delete</button></div>
-                  <p className="mt-2 text-sm text-brand-slate">{a.body}</p>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {tab === 'pages' && (
-        <Card>
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold">Pages Editor</h2>
-            <Button onClick={savePageBlocks as any}>Save Blocks</Button>
-          </div>
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            {pageBlocks.map((block, idx) => (
-              <label key={block.key} className="block">
-                <span className="text-sm font-medium text-brand-navy">{block.label}</span>
-                <span className="mt-0.5 block text-xs text-brand-slate">{block.key}</span>
-                <textarea value={block.value} onChange={(e) => setPageBlocks((prev) => prev.map((b, i) => i === idx ? { ...b, value: e.target.value } : b))} className="mt-2 min-h-24 w-full rounded-xl border border-brand-navy/10 px-3 py-2 text-sm" />
-              </label>
-            ))}
-          </div>
-        </Card>
-      )}
-
-      {tab === 'gallery' && (
-        <div className="grid w-full max-w-full gap-5 overflow-x-hidden xl:grid-cols-[0.95fr_1.05fr]">
-          <Card className="min-w-0">
-            <h2 className="text-lg font-semibold">Gallery Manager</h2>
-            <p className="mt-1 text-xs text-brand-slate">Use hosted image URLs for now. Images are used in page galleries only.</p>
-            <form action={saveGalleryItem} className="mt-4 w-full max-w-full space-y-3">
-              <input type="hidden" name="id" />
-              <input name="url" placeholder="https://..." className="w-full rounded-xl border px-3 py-2" required />
-              <input name="alt" placeholder="Alt text" className="w-full rounded-xl border px-3 py-2" required />
-              <div className="grid gap-3 sm:grid-cols-2">
-                <select name="section" className="w-full rounded-xl border px-3 py-2" defaultValue="general">
-                  <option value="general">general</option>
-                  <option value="our-home">our-home</option>
-                  <option value="announcements">announcements</option>
-                </select>
-                <input name="credit" placeholder="Credit" className="w-full rounded-xl border px-3 py-2 sm:col-span-2" />
-              </div>
-              <Button type="submit">Save Image</Button>
-            </form>
-          </Card>
-          <Card className="min-w-0">
-            <h2 className="text-lg font-semibold">Images</h2>
-            <div className="w-full overflow-x-auto -mx-4 px-4">
-              <div className="mt-4 w-full max-w-full space-y-3">
-                {gallery.map((g) => (
-                  <div key={g.id} className="w-full max-w-full rounded-2xl border border-brand-navy/10 p-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="break-words text-sm font-semibold text-brand-navy">{g.alt}</p>
-                        <p className="break-all text-xs text-brand-slate">{g.url}</p>
-                        <p className="mt-1 text-xs text-brand-slate">{g.section}</p>
-                      </div>
-                      <button onClick={() => deleteGallery(g.id)} className="shrink-0 text-sm text-rose-600">Delete</button>
-                    </div>
+                    <p className="mt-2 text-sm text-brand-slate">{announcement.body}</p>
                   </div>
                 ))}
               </div>
-            </div>
-          </Card>
-        </div>
-      )}
+            </Card>
+          </div>
+        )}
 
-      {tab === 'subscribers' && (
-        <div className="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]">
-          <Card>
-            <h2 className="text-lg font-semibold">Add Subscriber</h2>
-            <form action={addSubscriber} className="mt-4 space-y-3">
-              <input name="email" type="email" required placeholder="Email" className="w-full rounded-xl border px-3 py-2" />
-              <input name="name" placeholder="Name" className="w-full rounded-xl border px-3 py-2" />
-              <input name="source" defaultValue="admin" placeholder="Source" className="w-full rounded-xl border px-3 py-2" />
-              <Button type="submit">Add Subscriber</Button>
-            </form>
-          </Card>
-          <Card>
-            <div className="flex items-center justify-between gap-3"><h2 className="text-lg font-semibold">Subscribers</h2><a href="/api/admin/export/subscribers" className="text-sm text-brand-teal">Export CSV</a></div>
-            <div className="mt-4 space-y-2 md:hidden">
-              {subscribers.map((s) => <div key={s.id} className="rounded-xl border border-brand-navy/10 p-3 text-sm"><p className="font-semibold">{s.email}</p><p className="text-xs text-brand-slate">{s.name || 'No name'} • {s.source} • {s.created_at.slice(0,10)}</p></div>)}
-            </div>
-            <div className="mt-4 hidden md:block overflow-x-auto">
-              <table className="min-w-full text-sm"><thead><tr className="text-xs uppercase text-brand-slate"><th className="px-2 py-2 text-left">Email</th><th className="px-2 py-2 text-left">Name</th><th className="px-2 py-2 text-left">Source</th><th className="px-2 py-2 text-left">Date</th></tr></thead><tbody>{subscribers.map((s) => <tr key={s.id} className="border-t"><td className="px-2 py-2">{s.email}</td><td className="px-2 py-2">{s.name || ''}</td><td className="px-2 py-2">{s.source}</td><td className="px-2 py-2">{s.created_at.slice(0,10)}</td></tr>)}</tbody></table>
-            </div>
-          </Card>
-        </div>
-      )}
+        {tab === 'subscribers' && (
+          <div className="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]">
+            <Card>
+              <h2 className="text-lg font-semibold">Add Subscriber</h2>
+              <form action={addSubscriber} className="mt-4 space-y-3">
+                <input name="email" type="email" required placeholder="Email" className="w-full rounded-xl border px-3 py-2" />
+                <input name="name" placeholder="Name" className="w-full rounded-xl border px-3 py-2" />
+                <input name="source" defaultValue="admin" placeholder="Source" className="w-full rounded-xl border px-3 py-2" />
+                <Button type="submit">Add Subscriber</Button>
+              </form>
+            </Card>
+            <Card>
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-lg font-semibold">Subscribers</h2>
+                <a href="/api/admin/export/subscribers" className="text-sm text-brand-teal">
+                  Export CSV
+                </a>
+              </div>
+              <div className="mt-4 space-y-2 md:hidden">
+                {subscribers.map((subscriber) => (
+                  <div key={subscriber.id} className="rounded-xl border border-brand-navy/10 p-3 text-sm">
+                    <p className="font-semibold">{subscriber.email}</p>
+                    <p className="text-xs text-brand-slate">
+                      {subscriber.name || 'No name'} • {subscriber.source} • {subscriber.created_at.slice(0, 10)}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 hidden overflow-x-auto md:block">
+                <table className="min-w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs uppercase text-brand-slate">
+                      <th className="px-2 py-2">Email</th>
+                      <th className="px-2 py-2">Name</th>
+                      <th className="px-2 py-2">Source</th>
+                      <th className="px-2 py-2">Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {subscribers.map((subscriber) => (
+                      <tr key={subscriber.id} className="border-t">
+                        <td className="px-2 py-2">{subscriber.email}</td>
+                        <td className="px-2 py-2">{subscriber.name || ''}</td>
+                        <td className="px-2 py-2">{subscriber.source}</td>
+                        <td className="px-2 py-2">{subscriber.created_at.slice(0, 10)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          </div>
+        )}
 
-      {tab === 'activity' && (
-        <div className="grid gap-5 lg:grid-cols-2">
-          <Card>
-            <h2 className="text-lg font-semibold">Leads per day</h2>
-            <div className="mt-4 space-y-2">
-              {activity.byDate.map(([day, count]) => (
-                <BarRow key={day} label={day} value={count} max={Math.max(...activity.byDate.map((x) => x[1]), 1)} />
-              ))}
-              {!activity.byDate.length ? <p className="text-sm text-brand-slate">No lead data loaded yet.</p> : null}
-            </div>
-          </Card>
-          <Card>
-            <h2 className="text-lg font-semibold">By UTM source / campaign</h2>
-            <div className="mt-4 space-y-2">
-              {activity.bySource.map(([label, count]) => (
-                <BarRow key={label} label={label} value={count} max={Math.max(...activity.bySource.map((x) => x[1]), 1)} />
-              ))}
-              {!activity.bySource.length ? <p className="text-sm text-brand-slate">UTM fields will populate from form submissions.</p> : null}
-            </div>
-          </Card>
-        </div>
-      )}
+        {tab === 'activity' && (
+          <div className="space-y-5">
+            <Card>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-brand-navy">Activity Dashboard</h2>
+                  <p className="mt-1 text-sm text-brand-slate">
+                    Plain-language analytics showing what is working, where visitors come from, and which pages drive inquiries.
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  {[7, 30, 90].map((days) => (
+                    <button
+                      key={days}
+                      onClick={() => setActivityDays(days as 7 | 30 | 90)}
+                      className={`rounded-full px-3 py-1.5 text-sm ${
+                        activityDays === days ? 'bg-brand-navy text-white' : 'border border-brand-navy/10 bg-white text-brand-slate'
+                      }`}
+                    >
+                      {days}d
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </Card>
+
+            {loadingActivity ? (
+              <Card>
+                <p className="text-sm text-brand-slate">Loading activity analytics...</p>
+              </Card>
+            ) : null}
+
+            {activityError ? (
+              <Card>
+                <p className="text-sm text-rose-700">{activityError}</p>
+                <p className="mt-2 text-xs text-brand-slate">
+                  If this mentions missing relations, apply the latest Supabase migration for `activity_events` and redeploy.
+                </p>
+              </Card>
+            ) : null}
+
+            {activityData ? (
+              <>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                  <MetricCard label="Total Visits" value={activityData.overview.totalVisits} />
+                  <MetricCard label="Unique Sessions" value={activityData.overview.uniqueSessions} />
+                  <MetricCard label="Placement Inquiries" value={activityData.overview.placementInquiries} />
+                  <MetricCard label="Tour Requests" value={activityData.overview.tourRequests} />
+                  <MetricCard label="Conversion Rate" value={`${activityData.overview.conversionRate}%`} />
+                  <MetricCard label="Calls Clicked" value={activityData.overview.callsClicked} />
+                </div>
+
+                <Card>
+                  <h3 className="text-base font-semibold text-brand-navy">Top Pages</h3>
+                  <p className="mt-1 text-sm text-brand-slate">
+                    This shows which pages get the most attention and which ones drive inquiries.
+                  </p>
+                  <div className="-mx-4 mt-4 w-full overflow-x-auto px-4">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="border-b text-left text-xs uppercase tracking-wider text-brand-slate">
+                          <th className="px-2 py-2">Page</th>
+                          <th className="px-2 py-2">Views</th>
+                          <th className="px-2 py-2">CTA Clicks</th>
+                          <th className="px-2 py-2">Conversions</th>
+                          <th className="px-2 py-2">Conversion Rate</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activityData.topPages.map((item) => (
+                          <tr key={item.page} className="border-b border-brand-navy/5">
+                            <td className="px-2 py-2">{item.page}</td>
+                            <td className="px-2 py-2">{item.views}</td>
+                            <td className="px-2 py-2">{item.ctaClicks}</td>
+                            <td className="px-2 py-2">{item.conversions}</td>
+                            <td className="px-2 py-2">{item.conversionRate}%</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="mt-4 grid gap-4 md:grid-cols-2">
+                    <SimpleList title="Top Entry Pages" items={activityData.topEntryPages.map((item) => `${item.page} (${item.visits})`)} />
+                    <SimpleList title="Top Exit Pages" items={activityData.topExitPages.map((item) => `${item.page} (${item.visits})`)} />
+                  </div>
+                </Card>
+
+                <Card>
+                  <h3 className="text-base font-semibold text-brand-navy">Traffic Sources</h3>
+                  <div className="-mx-4 mt-4 w-full overflow-x-auto px-4">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="border-b text-left text-xs uppercase tracking-wider text-brand-slate">
+                          <th className="px-2 py-2">Source</th>
+                          <th className="px-2 py-2">UTM Campaign</th>
+                          <th className="px-2 py-2">Device</th>
+                          <th className="px-2 py-2">City/State</th>
+                          <th className="px-2 py-2">Visits</th>
+                          <th className="px-2 py-2">Conversions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activityData.trafficSources.map((item, index) => (
+                          <tr key={`${item.source}-${index}`} className="border-b border-brand-navy/5">
+                            <td className="px-2 py-2">{item.source}</td>
+                            <td className="px-2 py-2">{item.utmCampaign}</td>
+                            <td className="px-2 py-2">{item.device}</td>
+                            <td className="px-2 py-2">{item.city}</td>
+                            <td className="px-2 py-2">{item.visits}</td>
+                            <td className="px-2 py-2">{item.conversions}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+
+                <div className="grid gap-5 lg:grid-cols-2">
+                  <Card>
+                    <h3 className="text-base font-semibold text-brand-navy">Device Breakdown</h3>
+                    <p className="mt-1 text-sm text-brand-slate">Use this to prioritize mobile improvements when mobile traffic dominates.</p>
+                    <div className="mt-4 space-y-2 text-sm">
+                      <PercentRow label="Mobile" value={activityData.deviceBreakdown.mobile} />
+                      <PercentRow label="Desktop" value={activityData.deviceBreakdown.desktop} />
+                      <PercentRow label="Tablet" value={activityData.deviceBreakdown.tablet} />
+                    </div>
+                  </Card>
+
+                  <Card>
+                    <h3 className="text-base font-semibold text-brand-navy">Top Cities</h3>
+                    <div className="-mx-4 mt-4 w-full overflow-x-auto px-4">
+                      <table className="min-w-full text-sm">
+                        <thead>
+                          <tr className="border-b text-left text-xs uppercase tracking-wider text-brand-slate">
+                            <th className="px-2 py-2">City</th>
+                            <th className="px-2 py-2">Visits</th>
+                            <th className="px-2 py-2">Conversions</th>
+                            <th className="px-2 py-2">Conversion %</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {activityData.topCities.map((item) => (
+                            <tr key={item.city} className="border-b border-brand-navy/5">
+                              <td className="px-2 py-2">{item.city}</td>
+                              <td className="px-2 py-2">{item.visits}</td>
+                              <td className="px-2 py-2">{item.conversions}</td>
+                              <td className="px-2 py-2">{item.conversionRate}%</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
+                </div>
+
+                <Card>
+                  <h3 className="text-base font-semibold text-brand-navy">Conversion Funnel</h3>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-4">
+                    <MetricCard label="Visits" value={activityData.funnel.visits} compact />
+                    <MetricCard label="CTA Clicks" value={activityData.funnel.ctaClicks} compact />
+                    <MetricCard
+                      label="Form Started"
+                      value={activityData.funnel.formStarted === null ? 'Not tracked yet' : activityData.funnel.formStarted}
+                      compact
+                    />
+                    <MetricCard label="Form Submitted" value={activityData.funnel.formSubmitted} compact />
+                  </div>
+                </Card>
+
+                <Card>
+                  <h3 className="text-base font-semibold text-brand-navy">UTM Campaign Performance</h3>
+                  <div className="-mx-4 mt-4 w-full overflow-x-auto px-4">
+                    <table className="min-w-full text-sm">
+                      <thead>
+                        <tr className="border-b text-left text-xs uppercase tracking-wider text-brand-slate">
+                          <th className="px-2 py-2">utm_source</th>
+                          <th className="px-2 py-2">utm_medium</th>
+                          <th className="px-2 py-2">utm_campaign</th>
+                          <th className="px-2 py-2">Visits</th>
+                          <th className="px-2 py-2">Conversions</th>
+                          <th className="px-2 py-2">Conversion %</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {activityData.utmPerformance.map((item, index) => (
+                          <tr key={`${item.utmCampaign}-${index}`} className="border-b border-brand-navy/5">
+                            <td className="px-2 py-2">{item.utmSource}</td>
+                            <td className="px-2 py-2">{item.utmMedium}</td>
+                            <td className="px-2 py-2">{item.utmCampaign}</td>
+                            <td className="px-2 py-2">{item.visits}</td>
+                            <td className="px-2 py-2">{item.conversions}</td>
+                            <td className="px-2 py-2">{item.conversionRate}%</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+
+                <Card>
+                  <h3 className="text-base font-semibold text-brand-navy">How to Use This Page</h3>
+                  <ul className="mt-3 space-y-2 text-sm text-brand-slate">
+                    <li><span className="font-semibold text-brand-navy">Visit:</span> Each page load tracked as a page view.</li>
+                    <li><span className="font-semibold text-brand-navy">Session:</span> A single visitor journey grouped by an anonymous browser session ID.</li>
+                    <li><span className="font-semibold text-brand-navy">Conversion:</span> A completed form submission (placement, tour, or contact).</li>
+                    <li><span className="font-semibold text-brand-navy">Why top pages matter:</span> High-traffic pages with low conversion rate usually need clearer calls-to-action.</li>
+                    <li><span className="font-semibold text-brand-navy">How to use UTMs:</span> Add UTMs to campaign links so this dashboard can attribute traffic and leads accurately.</li>
+                    <li><span className="font-semibold text-brand-navy">What to change:</span> If a page has views but low conversions, improve headline clarity, trust content, and CTA placement.</li>
+                  </ul>
+                </Card>
+              </>
+            ) : null}
+          </div>
+        )}
       </div>
     </div>
   );
 }
 
 function DetailRow({ label, value }: { label: string; value: unknown }) {
-  return <p><span className="font-semibold text-brand-navy">{label}:</span> <span className="text-brand-slate break-all">{String(value || '')}</span></p>;
+  return (
+    <p>
+      <span className="font-semibold text-brand-navy">{label}:</span>{' '}
+      <span className="break-all text-brand-slate">{String(value || '')}</span>
+    </p>
+  );
 }
 
-function BarRow({ label, value, max }: { label: string; value: number; max: number }) {
-  const pct = max ? (value / max) * 100 : 0;
+function MetricCard({ label, value, compact = false }: { label: string; value: number | string; compact?: boolean }) {
+  return (
+    <div className={`rounded-xl border border-brand-navy/10 bg-white ${compact ? 'p-3' : 'p-4'}`}>
+      <p className="text-xs uppercase tracking-wide text-brand-slate">{label}</p>
+      <p className="mt-1 text-xl font-semibold text-brand-navy">{value}</p>
+    </div>
+  );
+}
+
+function PercentRow({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <div className="mb-1 flex items-center justify-between gap-3 text-xs text-brand-slate"><span className="truncate">{label}</span><span>{value}</span></div>
-      <div className="h-2 rounded-full bg-brand-sand"><div className="h-2 rounded-full bg-brand-teal" style={{ width: `${pct}%` }} /></div>
+      <div className="mb-1 flex items-center justify-between text-xs text-brand-slate">
+        <span>{label}</span>
+        <span>{value}%</span>
+      </div>
+      <div className="h-2 rounded-full bg-brand-sand">
+        <div className="h-2 rounded-full bg-brand-teal" style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function SimpleList({ title, items }: { title: string; items: string[] }) {
+  return (
+    <div className="rounded-xl border border-brand-navy/10 bg-brand-sand/45 p-3">
+      <p className="text-sm font-semibold text-brand-navy">{title}</p>
+      <ul className="mt-2 space-y-1 text-sm text-brand-slate">
+        {items.length ? items.map((item) => <li key={item}>{item}</li>) : <li>No data in selected range.</li>}
+      </ul>
     </div>
   );
 }

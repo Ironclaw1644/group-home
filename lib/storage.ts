@@ -1,17 +1,14 @@
 import 'server-only';
 
 import { randomUUID } from 'crypto';
-import { imageReferences } from '@/lib/content';
 import { cmsServerClient } from '@/lib/supabase/cmsServer';
 import type { Database } from '@/lib/supabase/cms.types';
-import type { Announcement, GalleryImage, LeadNote, LocalLead, PageBlock, Subscriber } from '@/lib/types';
+import type { Announcement, LeadNote, LocalLead, Subscriber } from '@/lib/types';
 
 type CmsTables = Database['athome_family_services_llc']['Tables'];
 
 type DbShape = {
   announcements: Announcement[];
-  pages: PageBlock[];
-  gallery: GalleryImage[];
   subscribers: Subscriber[];
   leadNotes: LeadNote[];
 };
@@ -38,25 +35,6 @@ function mapAnnouncement(row: CmsTables['announcements']['Row']): Announcement {
     priority: row.priority || 0,
     created_at: row.created_at,
     updated_at: row.updated_at
-  };
-}
-
-function mapPage(row: CmsTables['pages']['Row']): PageBlock {
-  return {
-    key: row.key,
-    label: row.label,
-    value: row.value,
-    updated_at: row.updated_at
-  };
-}
-
-function mapGallery(row: CmsTables['gallery']['Row']): GalleryImage {
-  return {
-    id: row.id,
-    url: row.url,
-    alt: row.alt,
-    section: (row.section as GalleryImage['section']) || 'general',
-    credit: row.credit || undefined
   };
 }
 
@@ -120,19 +98,7 @@ function seedDefaults() {
         created_at: now,
         updated_at: now
       }
-    ] satisfies Announcement[],
-    pages: [
-      { key: 'home.hero.title', label: 'Home Hero Title', value: 'A warm, supportive home built on dignity, trust, and daily care.', updated_at: now },
-      { key: 'home.hero.cta', label: 'Home Hero CTA', value: 'Start a Placement Inquiry', updated_at: now },
-      { key: 'home.hero.subtitle', label: 'Home Hero Subtitle', value: '24/7 supportive living services for adults with developmental disabilities in North Chesterfield, Virginia.', updated_at: now }
-    ] satisfies PageBlock[],
-    gallery: imageReferences.map((img, index) => ({
-      id: randomUUID(),
-      url: `${img.url}?auto=format&fit=crop&w=1200&q=80`,
-      alt: img.alt,
-      section: index === 2 ? 'our-home' : 'general',
-      credit: img.credit
-    })) satisfies GalleryImage[]
+    ] satisfies Announcement[]
   };
 }
 
@@ -166,38 +132,6 @@ async function ensureSeeded(key: keyof DbShape) {
       return;
     }
 
-    if (key === 'pages') {
-      const { data, error } = await supabase.from('pages').select('key').limit(1);
-      assertNoError(error);
-      if (!data?.length) {
-        const rows: CmsTables['pages']['Insert'][] = seeds.pages.map((p) => ({
-          key: p.key,
-          label: p.label,
-          value: p.value,
-          updated_at: p.updated_at
-        }));
-        const inserted = await supabase.from('pages').insert(rows);
-        assertNoError(inserted.error);
-      }
-      return;
-    }
-
-    if (key === 'gallery') {
-      const { data, error } = await supabase.from('gallery').select('id').limit(1);
-      assertNoError(error);
-      if (!data?.length) {
-        const rows: CmsTables['gallery']['Insert'][] = seeds.gallery.map((g) => ({
-          id: g.id,
-          url: g.url,
-          alt: g.alt,
-          section: g.section,
-          credit: g.credit || null,
-          created_at: nowIso()
-        }));
-        const inserted = await supabase.from('gallery').insert(rows);
-        assertNoError(inserted.error);
-      }
-    }
   })().finally(() => {
     seedGuards.delete(key);
   });
@@ -216,18 +150,6 @@ export async function dbGet<K extends keyof DbShape>(key: K): Promise<DbShape[K]
     return ((data as CmsTables['announcements']['Row'][] | null) || []).map(mapAnnouncement) as DbShape[K];
   }
 
-  if (key === 'pages') {
-    const { data, error } = await supabase.from('pages').select('*').order('key', { ascending: true });
-    assertNoError(error);
-    return ((data as CmsTables['pages']['Row'][] | null) || []).map(mapPage) as DbShape[K];
-  }
-
-  if (key === 'gallery') {
-    const { data, error } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
-    assertNoError(error);
-    return ((data as CmsTables['gallery']['Row'][] | null) || []).map(mapGallery) as DbShape[K];
-  }
-
   if (key === 'subscribers') {
     const { data, error } = await supabase.from('subscribers').select('*').order('created_at', { ascending: false });
     assertNoError(error);
@@ -237,15 +159,6 @@ export async function dbGet<K extends keyof DbShape>(key: K): Promise<DbShape[K]
   const { data, error } = await supabase.from('lead_notes').select('*').order('created_at', { ascending: false });
   assertNoError(error);
   return ((data as CmsTables['lead_notes']['Row'][] | null) || []).map(mapLeadNote) as DbShape[K];
-}
-
-export async function dbSet<K extends keyof DbShape>(key: K, value: DbShape[K]) {
-  const supabase = cmsServerClient();
-  if (key === 'pages') {
-    await upsertPageBlocks(value as unknown as { key: string; label: string; value: string }[]);
-    return;
-  }
-  throw new Error(`dbSet not supported for key: ${String(key)}. Use table-specific upsert helpers.`);
 }
 
 export async function upsertAnnouncement(input: Partial<Announcement> & Pick<Announcement, 'title' | 'body'>) {
@@ -280,45 +193,6 @@ export async function upsertAnnouncement(input: Partial<Announcement> & Pick<Ann
 export async function deleteAnnouncement(id: string) {
   const supabase = cmsServerClient();
   const { error } = await supabase.from('announcements').delete().eq('id', id);
-  assertNoError(error);
-}
-
-export async function upsertPageBlocks(items: { key: string; label: string; value: string }[]) {
-  const supabase = cmsServerClient();
-  const now = nowIso();
-  const rows: CmsTables['pages']['Insert'][] = items.map((item) => ({ key: item.key, label: item.label, value: item.value, updated_at: now }));
-  const { error } = await supabase.from('pages').upsert(rows, { onConflict: 'key' });
-  assertNoError(error);
-  return dbGet('pages');
-}
-
-export async function upsertGalleryImage(input: Omit<GalleryImage, 'id'> & { id?: string }) {
-  const supabase = cmsServerClient();
-  const id = input.id || randomUUID();
-  let createdAt = nowIso();
-  if (input.id) {
-    const existing = await supabase.from('gallery').select('created_at').eq('id', input.id).maybeSingle();
-    assertNoError(existing.error);
-    createdAt = existing.data?.created_at || createdAt;
-  }
-
-  const row: CmsTables['gallery']['Insert'] = {
-    id,
-    url: input.url,
-    alt: input.alt,
-    section: input.section || 'general',
-    credit: input.credit || null,
-    created_at: createdAt
-  };
-
-  const { data, error } = await supabase.from('gallery').upsert(row, { onConflict: 'id' }).select('*').single();
-  assertNoError(error);
-  return mapGallery(data as CmsTables['gallery']['Row']);
-}
-
-export async function deleteGalleryImage(id: string) {
-  const supabase = cmsServerClient();
-  const { error } = await supabase.from('gallery').delete().eq('id', id);
   assertNoError(error);
 }
 

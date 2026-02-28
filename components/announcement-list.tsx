@@ -1,5 +1,5 @@
 import { dbGet } from '@/lib/storage';
-import { Card } from '@/components/ui';
+import { AnnouncementItem } from '@/components/announcement-item.client';
 
 export async function AnnouncementList({ currentPath }: { currentPath?: string }) {
   const announcements = await dbGet('announcements');
@@ -16,10 +16,7 @@ export async function AnnouncementList({ currentPath }: { currentPath?: string }
   return (
     <div className="space-y-3">
       {active.map((item) => (
-        <Card key={item.id} className="border-brand-teal/15">
-          <p className="text-sm font-semibold text-brand-navy">{item.title}</p>
-          <p className="mt-2 text-sm leading-7 text-brand-slate">{item.body}</p>
-        </Card>
+        <AnnouncementItem key={item.id} id={item.id} title={item.title} body={item.body} />
       ))}
     </div>
   );

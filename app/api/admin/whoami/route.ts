@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
-import { adminAllowlist, adminCookieName, isAllowedAdminEmail } from '@/lib/auth';
+import { ADMIN_COOKIE_NAME, verifyAdminSessionToken } from '@/lib/auth/admin';
 
 export const runtime = 'nodejs';
 
@@ -23,33 +23,33 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const allowlist = adminAllowlist();
   const cookieStore = await cookies();
-  const cookieValue = cookieStore.get(adminCookieName)?.value?.trim().toLowerCase() || '';
+  const cookieValue = cookieStore.get(ADMIN_COOKIE_NAME)?.value || '';
+  const session = verifyAdminSessionToken(cookieValue);
   const hasAuthCookie = Boolean(cookieValue);
+  const allowlistParsed = (process.env.ADMIN_ALLOWLIST || '')
+    .split(/[\n\r,]+/)
+    .map((x) => x.trim().toLowerCase())
+    .filter(Boolean);
   const hasAllowlistEnv = Boolean(process.env.ADMIN_ALLOWLIST && process.env.ADMIN_ALLOWLIST.trim());
 
   let authResult: 'authorized' | 'unauthorized' = 'unauthorized';
   let reason = 'Missing auth cookie';
 
-  if (!hasAllowlistEnv) {
-    reason = 'ADMIN_ALLOWLIST is missing or empty';
-  } else if (!allowlist.length) {
-    reason = 'ADMIN_ALLOWLIST parsed to zero entries';
-  } else if (!hasAuthCookie) {
-    reason = `Cookie ${adminCookieName} is missing`;
-  } else if (!isAllowedAdminEmail(cookieValue)) {
-    reason = 'Cookie email is not in ADMIN_ALLOWLIST';
+  if (!hasAuthCookie) {
+    reason = `Cookie ${ADMIN_COOKIE_NAME} is missing`;
+  } else if (!session) {
+    reason = 'Session cookie failed signature or expiration checks';
   } else {
     authResult = 'authorized';
-    reason = 'Cookie email matches ADMIN_ALLOWLIST';
+    reason = 'Session cookie is valid';
   }
 
   return NextResponse.json({
     hasAllowlistEnv,
-    allowlistParsed: allowlist,
-    allowlistCount: allowlist.length,
-    cookieName: adminCookieName,
+    allowlistParsed,
+    allowlistCount: allowlistParsed.length,
+    cookieName: ADMIN_COOKIE_NAME,
     hasAuthCookie,
     authResult,
     reason,

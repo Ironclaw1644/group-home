@@ -6,6 +6,7 @@ import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
 import { MobileStickyCTA } from '@/components/mobile-sticky-cta';
 import { StructuredData } from '@/components/structured-data';
+import { ActivityTracker } from '@/components/activity-tracker';
 import { buildMetadata, localBusinessJsonLd } from '@/lib/site';
 
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-sans' });
@@ -30,6 +31,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" className={`${manrope.variable} ${fraunces.variable}`}>
       <body className="pb-20 md:pb-0" style={{ fontFamily: 'var(--font-sans)' }}>
         <StructuredData data={localBusinessJsonLd()} />
+        <ActivityTracker />
         <SiteHeader />
         <main>{children}</main>
         <SiteFooter />

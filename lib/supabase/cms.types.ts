@@ -92,6 +92,28 @@ export type Database = {
         Update: Partial<Database['athome_family_services_llc']['Tables']['leads']['Row']>;
         Relationships: [];
       };
+      activity_events: {
+        Row: {
+          id: string;
+          created_at: string;
+          session_id: string | null;
+          event_type: string;
+          page_path: string | null;
+          referrer: string | null;
+          utm_source: string | null;
+          utm_medium: string | null;
+          utm_campaign: string | null;
+          utm_term: string | null;
+          utm_content: string | null;
+          device: string | null;
+          city: string | null;
+          cta_name: string | null;
+          form_name: string | null;
+        };
+        Insert: Partial<Database['athome_family_services_llc']['Tables']['activity_events']['Row']>;
+        Update: Partial<Database['athome_family_services_llc']['Tables']['activity_events']['Row']>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

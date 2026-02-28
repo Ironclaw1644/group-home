@@ -28,7 +28,8 @@ export function Button({
   className,
   type = 'button',
   onClick,
-  disabled
+  disabled,
+  trackCta
 }: {
   href?: string;
   children: ReactNode;
@@ -37,6 +38,7 @@ export function Button({
   type?: 'button' | 'submit' | 'reset';
   onClick?: MouseEventHandler<HTMLButtonElement>;
   disabled?: ButtonHTMLAttributes<HTMLButtonElement>['disabled'];
+  trackCta?: string;
 }) {
   const base = cn(
     'inline-flex items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal/60',
@@ -46,8 +48,8 @@ export function Button({
     className
   );
 
-  if (href) return <Link className={base} href={href}>{children}</Link>;
-  return <button type={type} className={base} onClick={onClick} disabled={disabled}>{children}</button>;
+  if (href) return <Link className={base} href={href} data-track-cta={trackCta}>{children}</Link>;
+  return <button type={type} className={base} onClick={onClick} disabled={disabled} data-track-cta={trackCta}>{children}</button>;
 }
 
 export function Badge({ children }: { children: ReactNode }) {

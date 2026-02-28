@@ -35,7 +35,7 @@ export async function GET(req: Request) {
     const lowered = message.toLowerCase();
     const migrationHint =
       lowered.includes('relation') && lowered.includes('leads')
-        ? 'Local leads table is missing. Apply Supabase migrations and redeploy.'
+        ? 'Local leads table is missing. Apply database migrations and redeploy.'
         : null;
     return NextResponse.json(
       {

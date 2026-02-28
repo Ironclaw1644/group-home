@@ -3,11 +3,8 @@ import Image from 'next/image';
 import { PageHero } from '@/components/page-hero';
 import { Section, Card, Button, Badge } from '@/components/ui';
 import { AnnouncementList } from '@/components/announcement-list';
-import { getPageBlockMap } from '@/lib/cms';
 import { business } from '@/lib/content';
 import { Reveal } from '@/components/reveal';
-
-export const dynamic = 'force-dynamic';
 
 const homeHighlights = [
   {
@@ -27,11 +24,10 @@ const homeHighlights = [
   }
 ] as const;
 
-export default async function HomePage() {
-  const blocks = await getPageBlockMap();
-  const heroTitle = blocks.get('home.hero.title') || 'A warm, supportive home built on dignity, trust, and daily care.';
-  const heroSubtitle = blocks.get('home.hero.subtitle') || '24/7 supportive living services for adults with developmental disabilities in North Chesterfield, Virginia.';
-  const heroCta = blocks.get('home.hero.cta') || 'Start a Placement Inquiry';
+export default function HomePage() {
+  const heroTitle = 'A warm, supportive home built on dignity, trust, and daily care.';
+  const heroSubtitle = '24/7 supportive living services for adults with developmental disabilities in North Chesterfield, Virginia.';
+  const heroCta = 'Start a Placement Inquiry';
   return (
     <>
       <PageHero
@@ -39,9 +35,9 @@ export default async function HomePage() {
         description={heroSubtitle}
         actions={
           <>
-            <Button href="/placement-inquiry">{heroCta}</Button>
-            <Button href="/tour" variant="ghost">Request a Tour</Button>
-            <Button href={business.phoneHref} variant="secondary">Call {business.phone}</Button>
+            <Button href="/placement-inquiry" trackCta="placement-inquiry">{heroCta}</Button>
+            <Button href="/tour" variant="ghost" trackCta="request-tour">Request a Tour</Button>
+            <Button href={business.phoneHref} variant="secondary" trackCta="call">Call {business.phone}</Button>
           </>
         }
       />
@@ -104,8 +100,8 @@ export default async function HomePage() {
           </div>
         </Reveal>
         <div className="mt-6 flex flex-wrap gap-3">
-          <Button href="/our-home" variant="ghost">View Our Home</Button>
-          <Button href="/requirements" variant="secondary">Review Requirements</Button>
+          <Button href="/our-home" variant="ghost" trackCta="view-our-home">View Our Home</Button>
+          <Button href="/requirements" variant="secondary" trackCta="review-requirements">Review Requirements</Button>
         </div>
       </Section>
 

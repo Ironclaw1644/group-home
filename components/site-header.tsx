@@ -30,8 +30,8 @@ export function SiteHeader() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
-          <Button href="/placement-inquiry" className="hidden sm:inline-flex">Placement Inquiry</Button>
-          <Button href="/tour" variant="ghost" className="hidden md:inline-flex">Request Tour</Button>
+          <Button href="/placement-inquiry" trackCta="placement-inquiry" className="hidden sm:inline-flex">Placement Inquiry</Button>
+          <Button href="/tour" variant="ghost" trackCta="request-tour" className="hidden md:inline-flex">Request Tour</Button>
         </div>
       </div>
       <div className="container-shell overflow-x-auto pb-2 lg:hidden">

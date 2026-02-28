@@ -36,6 +36,19 @@ a {
   @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
 }
 
+.announcement-clamp {
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media (min-width: 640px) {
+  .announcement-clamp {
+    -webkit-line-clamp: 6;
+  }
+}
+
 .reveal {
   opacity: 0;
   transform: translateY(8px);

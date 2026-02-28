@@ -52,8 +52,8 @@ export function SiteFooter() {
         <div>
           <h3 className="text-sm font-semibold text-brand-navy">Action</h3>
           <div className="mt-2 flex flex-col gap-2 text-sm">
-            <Link href="/placement-inquiry" className="rounded-xl bg-brand-navy px-4 py-2 text-center font-semibold text-white">Start Placement Inquiry</Link>
-            <Link href="/tour" className="rounded-xl border border-brand-navy/10 bg-white px-4 py-2 text-center font-semibold text-brand-navy">Request a Tour</Link>
+            <Link href="/placement-inquiry" data-track-cta="placement-inquiry" className="rounded-xl bg-brand-navy px-4 py-2 text-center font-semibold text-white">Start Placement Inquiry</Link>
+            <Link href="/tour" data-track-cta="request-tour" className="rounded-xl border border-brand-navy/10 bg-white px-4 py-2 text-center font-semibold text-brand-navy">Request a Tour</Link>
           </div>
         </div>
       </div>
