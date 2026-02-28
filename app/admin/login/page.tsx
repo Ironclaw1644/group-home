@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
+import Image from 'next/image';
 import { adminAllowlist, adminCookieName } from '@/lib/auth';
 import { buildMetadata } from '@/lib/site';
 
@@ -23,6 +24,17 @@ export default async function AdminLoginPage({ searchParams }: { searchParams: P
   return (
     <div className="container-shell py-16">
       <div className="mx-auto max-w-md rounded-3xl border border-white/80 bg-white p-6 shadow-card">
+        <div className="mb-3 flex items-center gap-3">
+          <Image
+            src="/brand/logo.png"
+            alt="At Home Family Services, LLC"
+            width={44}
+            height={44}
+            className="h-11 w-11 rounded-full object-contain"
+            priority
+          />
+          <p className="text-xs font-medium uppercase tracking-[0.12em] text-brand-slate">At Home Family Services, LLC</p>
+        </div>
         <h1 className="text-2xl font-semibold text-brand-navy">Admin Login</h1>
         <p className="mt-2 text-sm text-brand-slate">Use an allowlisted admin email. Configure `ADMIN_ALLOWLIST` in the environment.</p>
         {params.error ? <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">Email is not in the admin allowlist.</p> : null}

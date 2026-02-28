@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import type { Announcement, GalleryImage, LocalLead, PageBlock, Subscriber } from '@/lib/types';
 import { Button, Card, Badge } from '@/components/ui';
@@ -190,13 +191,23 @@ export function AdminDashboard({
   }
 
   return (
-    <div className="container-shell py-8">
+    <div className="container-shell w-full max-w-full overflow-x-hidden py-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-3xl font-semibold text-brand-navy">Admin Dashboard</h1>
+          <div className="flex items-center gap-3">
+            <Image
+              src="/brand/logo.png"
+              alt="At Home Family Services, LLC"
+              width={38}
+              height={38}
+              className="h-9 w-9 rounded-full object-contain"
+              priority
+            />
+            <h1 className="text-3xl font-semibold text-brand-navy">Admin Dashboard</h1>
+          </div>
           <p className="mt-1 text-sm text-brand-slate">Signed in as {adminEmail}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <a href="/api/admin/export/leads" className="rounded-xl border border-brand-navy/10 bg-white px-3 py-2 text-sm font-medium">Export Leads CSV</a>
           <a href="/api/admin/export/subscribers" className="rounded-xl border border-brand-navy/10 bg-white px-3 py-2 text-sm font-medium">Export Subscribers CSV</a>
           <button onClick={logout} className="rounded-xl bg-brand-navy px-3 py-2 text-sm font-semibold text-white">Logout</button>
@@ -218,6 +229,7 @@ export function AdminDashboard({
         </p>
       ) : null}
 
+      <div className="w-full max-w-full overflow-x-hidden">
       {tab === 'leads' && (
         <div className="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
           <Card>
@@ -401,40 +413,42 @@ export function AdminDashboard({
       )}
 
       {tab === 'gallery' && (
-        <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
-          <Card>
+        <div className="grid w-full max-w-full gap-5 overflow-x-hidden xl:grid-cols-[0.95fr_1.05fr]">
+          <Card className="min-w-0">
             <h2 className="text-lg font-semibold">Gallery Manager</h2>
             <p className="mt-1 text-xs text-brand-slate">Use hosted image URLs for now. Images are used in page galleries only.</p>
-            <form action={saveGalleryItem} className="mt-4 space-y-3">
+            <form action={saveGalleryItem} className="mt-4 w-full max-w-full space-y-3">
               <input type="hidden" name="id" />
               <input name="url" placeholder="https://..." className="w-full rounded-xl border px-3 py-2" required />
               <input name="alt" placeholder="Alt text" className="w-full rounded-xl border px-3 py-2" required />
               <div className="grid gap-3 sm:grid-cols-2">
-                <select name="section" className="rounded-xl border px-3 py-2" defaultValue="general">
+                <select name="section" className="w-full rounded-xl border px-3 py-2" defaultValue="general">
                   <option value="general">general</option>
                   <option value="our-home">our-home</option>
                   <option value="announcements">announcements</option>
                 </select>
-                <input name="credit" placeholder="Credit" className="rounded-xl border px-3 py-2 sm:col-span-2" />
+                <input name="credit" placeholder="Credit" className="w-full rounded-xl border px-3 py-2 sm:col-span-2" />
               </div>
               <Button type="submit">Save Image</Button>
             </form>
           </Card>
-          <Card>
+          <Card className="min-w-0">
             <h2 className="text-lg font-semibold">Images</h2>
-            <div className="mt-4 space-y-3">
-              {gallery.map((g) => (
-                <div key={g.id} className="rounded-2xl border border-brand-navy/10 p-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-brand-navy">{g.alt}</p>
-                      <p className="truncate text-xs text-brand-slate">{g.url}</p>
-                      <p className="mt-1 text-xs text-brand-slate">{g.section}</p>
+            <div className="w-full overflow-x-auto -mx-4 px-4">
+              <div className="mt-4 w-full max-w-full space-y-3">
+                {gallery.map((g) => (
+                  <div key={g.id} className="w-full max-w-full rounded-2xl border border-brand-navy/10 p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="break-words text-sm font-semibold text-brand-navy">{g.alt}</p>
+                        <p className="break-all text-xs text-brand-slate">{g.url}</p>
+                        <p className="mt-1 text-xs text-brand-slate">{g.section}</p>
+                      </div>
+                      <button onClick={() => deleteGallery(g.id)} className="shrink-0 text-sm text-rose-600">Delete</button>
                     </div>
-                    <button onClick={() => deleteGallery(g.id)} className="text-sm text-rose-600">Delete</button>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </Card>
         </div>
@@ -485,6 +499,7 @@ export function AdminDashboard({
           </Card>
         </div>
       )}
+      </div>
     </div>
   );
 }

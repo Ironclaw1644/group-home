@@ -3,22 +3,34 @@ import Image from 'next/image';
 import { PageHero } from '@/components/page-hero';
 import { Section, Card, Button, Badge } from '@/components/ui';
 import { AnnouncementList } from '@/components/announcement-list';
-import { dbGet } from '@/lib/storage';
 import { getPageBlockMap } from '@/lib/cms';
-import { business, imageReferences } from '@/lib/content';
+import { business } from '@/lib/content';
 
 export const dynamic = 'force-dynamic';
 
+const homeHighlights = [
+  {
+    id: 'ahfs-home-2',
+    src: '/images/ahfs/AHFS_home_2.png',
+    alt: 'Caregiver supporting daily living in a comfortable home'
+  },
+  {
+    id: 'ahfs-home-3',
+    src: '/images/ahfs/AHFS_home_3.png',
+    alt: 'Care professional meeting with family at a table'
+  },
+  {
+    id: 'ahfs-home-4',
+    src: '/images/ahfs/AHFS_home_4.png',
+    alt: 'Comfortable modern living room with natural light'
+  }
+] as const;
+
 export default async function HomePage() {
-  const [gallery, blocks] = await Promise.all([dbGet('gallery'), getPageBlockMap()]);
+  const blocks = await getPageBlockMap();
   const heroTitle = blocks.get('home.hero.title') || 'A warm, supportive home built on dignity, trust, and daily care.';
   const heroSubtitle = blocks.get('home.hero.subtitle') || '24/7 supportive living services for adults with developmental disabilities in North Chesterfield, Virginia.';
   const heroCta = blocks.get('home.hero.cta') || 'Start a Placement Inquiry';
-  const heroImage = {
-    url: `${imageReferences[0].url}?auto=format&fit=crop&w=1400&q=80`,
-    alt: imageReferences[0].alt
-  };
-
   return (
     <>
       <PageHero
@@ -36,9 +48,14 @@ export default async function HomePage() {
       <section className="container-shell pb-6">
         <div className="grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="relative overflow-hidden rounded-3xl border border-white/80 bg-white shadow-card">
-            {heroImage ? (
-              <Image src={heroImage.url} alt={heroImage.alt} width={1400} height={900} priority className="h-full min-h-[260px] w-full object-cover" />
-            ) : null}
+            <Image
+              src="/images/home/AHFS_home_1.webp"
+              alt="Supportive living environment with compassionate caregiver in a warm residential setting"
+              width={1600}
+              height={900}
+              priority
+              className="h-full min-h-[260px] w-full object-cover"
+            />
           </div>
           <div className="space-y-4">
             <Card>
@@ -73,9 +90,9 @@ export default async function HomePage() {
 
       <Section title="Home highlights" description="Three bedrooms, 2.5 bath, updated appliances, modern hardwood flooring, and a backyard/outdoor wellness space.">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {gallery.slice(0, 3).map((img) => (
-            <Card key={img.id} className="p-0 overflow-hidden">
-              <Image src={img.url} alt={img.alt} width={1000} height={700} className="h-52 w-full object-cover" />
+          {homeHighlights.map((img) => (
+            <Card key={img.id} className="overflow-hidden p-0">
+              <Image src={img.src} alt={img.alt} width={1000} height={700} className="h-52 w-full object-cover" />
               <div className="p-4">
                 <p className="text-sm text-brand-slate">{img.alt}</p>
               </div>

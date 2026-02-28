@@ -33,7 +33,7 @@ export function localBusinessJsonLd() {
     '@context': 'https://schema.org',
     '@type': 'LocalBusiness',
     name: business.name,
-    image: absoluteUrl('/opengraph-image'),
+    image: absoluteUrl('/brand/logo.png'),
     url: absoluteUrl('/'),
     telephone: business.phone,
     email: business.email,

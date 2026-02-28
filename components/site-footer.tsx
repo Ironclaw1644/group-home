@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { business, footerLinks } from '@/lib/content';
 
 export function SiteFooter() {
@@ -6,7 +7,17 @@ export function SiteFooter() {
     <footer className="mt-16 border-t border-brand-navy/10 bg-white/75">
       <div className="container-shell grid gap-8 py-10 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <p className="font-semibold text-brand-navy">{business.name}</p>
+          <div className="flex items-center gap-3">
+            <Image
+              src="/brand/logo.png"
+              alt="At Home Family Services, LLC"
+              width={40}
+              height={40}
+              className="h-10 w-10 rounded-full object-contain"
+              loading="lazy"
+            />
+            <p className="font-semibold text-brand-navy">{business.name}</p>
+          </div>
           <p className="mt-2 text-sm text-brand-slate">Warm, supportive living for adults with developmental disabilities with a focus on independence, dignity, and wellbeing.</p>
         </div>
         <div>

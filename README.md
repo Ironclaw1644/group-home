@@ -95,6 +95,29 @@ npm run dev
 
 Then open `http://localhost:3000`.
 
+## Brand Assets
+
+- Source logo: `public/brand/AHFS_logo.png`
+- Web logo: `public/brand/logo.png`
+- Header, footer, and admin UI use `/brand/logo.png` via `next/image`
+- App Router/browser icons are generated into:
+  - `app/icon.png`
+  - `app/apple-icon.png`
+  - `public/favicon.ico`
+  - `public/favicon-16x16.png`
+  - `public/favicon-32x32.png`
+  - `public/android-chrome-192x192.png`
+  - `public/android-chrome-512x512.png`
+  - `public/site.webmanifest`
+
+Regenerate icon assets after replacing the source logo:
+
+```bash
+npm run generate:icons
+```
+
+The generator script is `scripts/generate-icons.mjs` and uses the local ImageMagick binary (`magick`/`convert`) to keep icon outputs consistent.
+
 ## Vercel Deployment Notes
 
 - Set all env vars in Vercel Project Settings.
