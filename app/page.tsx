@@ -5,6 +5,7 @@ import { Section, Card, Button, Badge } from '@/components/ui';
 import { AnnouncementList } from '@/components/announcement-list';
 import { getPageBlockMap } from '@/lib/cms';
 import { business } from '@/lib/content';
+import { Reveal } from '@/components/reveal';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,17 +13,17 @@ const homeHighlights = [
   {
     id: 'ahfs-home-2',
     src: '/images/ahfs/AHFS_home_2.png',
-    alt: 'Caregiver supporting daily living in a comfortable home'
+    alt: 'Caregiver supporting resident'
   },
   {
     id: 'ahfs-home-3',
     src: '/images/ahfs/AHFS_home_3.png',
-    alt: 'Care professional meeting with family at a table'
+    alt: 'Care professional meeting with family'
   },
   {
     id: 'ahfs-home-4',
     src: '/images/ahfs/AHFS_home_4.png',
-    alt: 'Comfortable modern living room with natural light'
+    alt: 'Caregiver and resident walking outdoors'
   }
 ] as const;
 
@@ -58,19 +59,23 @@ export default async function HomePage() {
             />
           </div>
           <div className="space-y-4">
-            <Card>
-              <Badge>Our Mission</Badge>
-              <p className="mt-3 text-sm leading-7 text-brand-slate">We provide a warm, nurturing home with compassion, attention to detail, and high-quality daily living support that promotes independence, dignity, and wellbeing.</p>
-            </Card>
-            <Card>
-              <Badge>Core Values</Badge>
-              <div className="mt-3 grid grid-cols-2 gap-2 text-sm font-semibold text-brand-navy">
-                <span className="rounded-xl bg-brand-sand px-3 py-2">Passion</span>
-                <span className="rounded-xl bg-brand-sand px-3 py-2">Respect</span>
-                <span className="rounded-xl bg-brand-sand px-3 py-2">Trust</span>
-                <span className="rounded-xl bg-brand-sand px-3 py-2">Integrity</span>
-              </div>
-            </Card>
+            <Reveal>
+              <Card>
+                <Badge>Our Mission</Badge>
+                <p className="mt-3 text-sm leading-7 text-brand-slate">We provide a warm, nurturing home with compassion, attention to detail, and high-quality daily living support that promotes independence, dignity, and wellbeing.</p>
+              </Card>
+            </Reveal>
+            <Reveal delayMs={70}>
+              <Card>
+                <Badge>Core Values</Badge>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-sm font-semibold text-brand-navy">
+                  <span className="rounded-xl bg-brand-sand px-3 py-2">Passion</span>
+                  <span className="rounded-xl bg-brand-sand px-3 py-2">Respect</span>
+                  <span className="rounded-xl bg-brand-sand px-3 py-2">Trust</span>
+                  <span className="rounded-xl bg-brand-sand px-3 py-2">Integrity</span>
+                </div>
+              </Card>
+            </Reveal>
           </div>
         </div>
       </section>
@@ -90,13 +95,12 @@ export default async function HomePage() {
 
       <Section title="Home highlights" description="Three bedrooms, 2.5 bath, updated appliances, modern hardwood flooring, and a backyard/outdoor wellness space.">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {homeHighlights.map((img) => (
-            <Card key={img.id} className="overflow-hidden p-0">
-              <Image src={img.src} alt={img.alt} width={1000} height={700} className="h-52 w-full object-cover" />
-              <div className="p-4">
-                <p className="text-sm text-brand-slate">{img.alt}</p>
-              </div>
-            </Card>
+          {homeHighlights.map((img, idx) => (
+            <Reveal key={img.id} delayMs={idx * 70}>
+              <Card className="overflow-hidden p-0">
+                <Image src={img.src} alt={img.alt} width={1000} height={700} className="h-52 w-full object-cover" />
+              </Card>
+            </Reveal>
           ))}
         </div>
         <div className="mt-6 flex flex-wrap gap-3">
@@ -106,7 +110,9 @@ export default async function HomePage() {
       </Section>
 
       <Section title="Current announcements" description="Updates about tours, openings, and scheduling.">
-        <AnnouncementList currentPath="/" />
+        <Reveal>
+          <AnnouncementList currentPath="/" />
+        </Reveal>
         <div className="mt-4"><Link href="/announcements" className="text-sm font-semibold text-brand-teal hover:text-brand-navy">See all announcements</Link></div>
       </Section>
     </>

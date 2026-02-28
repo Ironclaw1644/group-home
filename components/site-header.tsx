@@ -7,16 +7,17 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-40 border-b border-white/70 bg-white/85 backdrop-blur-md">
       <div className="container-shell flex items-center justify-between gap-2 py-2.5 md:gap-3 md:py-3">
-        <Link href="/" className="flex min-w-0 items-center gap-2 md:gap-3">
+        <Link href="/" className="flex min-w-0 items-center gap-1.5 md:gap-2">
           <Image
             src="/brand/logo.png"
             alt="At Home Family Services, LLC"
-            width={64}
-            height={64}
-            className="h-14 w-14 shrink-0 rounded-full object-contain md:h-16 md:w-16"
+            width={44}
+            height={44}
+            sizes="(max-width: 768px) 36px, 44px"
+            className="h-9 w-9 shrink-0 rounded-full object-contain md:h-11 md:w-11"
             priority
           />
-          <span className="min-w-0">
+          <span className="min-w-0 self-center">
             <p className="truncate text-sm font-semibold tracking-tight text-brand-navy sm:text-base">At Home Family Services, LLC</p>
             <p className="hidden text-xs text-brand-slate sm:block">Supportive living with dignity, trust, and daily care</p>
           </span>

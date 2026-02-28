@@ -44,13 +44,19 @@ export async function POST(req: Request) {
       status: 'new'
     });
 
-    if (meta.subscribe_updates && payload.contact_email) {
-      await upsertSubscriber({
-        email: payload.contact_email,
-        name: payload.contact_name,
-        source: String(meta.lead_type || 'form'),
-        opted_in: true
-      });
+    const subscribeUpdates = meta.subscribe_updates === true || meta.subscribe_updates === 'true' || meta.subscribe_updates === 'on';
+    if (subscribeUpdates && payload.contact_email) {
+      try {
+        await upsertSubscriber({
+          email: payload.contact_email,
+          name: payload.contact_name,
+          source: String(meta.lead_type || 'form'),
+          opted_in: true
+        });
+      } catch (subscriberError) {
+        const subscriberMessage = subscriberError instanceof Error ? subscriberError.message : 'Subscriber opt-in failed';
+        console.error('Subscriber opt-in failed', { leadId: localLead.id, error: subscriberMessage });
+      }
     }
 
     let forwarded = false;

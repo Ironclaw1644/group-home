@@ -12,6 +12,10 @@ html, body {
   overflow-x: hidden;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   @apply bg-brand-sand text-brand-navy antialiased;
   background-image:
@@ -30,4 +34,35 @@ a {
 
 .container-shell {
   @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(8px);
+  filter: blur(2px);
+  transition:
+    opacity 360ms ease-out,
+    transform 360ms ease-out,
+    filter 360ms ease-out;
+  will-change: opacity, transform;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .reveal,
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
 }

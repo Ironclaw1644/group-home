@@ -7,16 +7,17 @@ export function SiteFooter() {
     <footer className="mt-16 border-t border-brand-navy/10 bg-white/75">
       <div className="container-shell grid gap-8 py-10 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Image
               src="/brand/logo.png"
               alt="At Home Family Services, LLC"
-              width={40}
-              height={40}
-              className="h-10 w-10 rounded-full object-contain"
+              width={44}
+              height={44}
+              sizes="44px"
+              className="h-11 w-11 rounded-full object-contain"
               loading="lazy"
             />
-            <p className="font-semibold text-brand-navy">{business.name}</p>
+            <p className="font-semibold tracking-tight text-brand-navy">{business.name}</p>
           </div>
           <p className="mt-2 text-sm text-brand-slate">Warm, supportive living for adults with developmental disabilities with a focus on independence, dignity, and wellbeing.</p>
         </div>
@@ -26,7 +27,18 @@ export function SiteFooter() {
             <li><a href={business.phoneHref} className="hover:text-brand-navy">{business.phone}</a></li>
             <li><a href={`mailto:${business.email}`} className="hover:text-brand-navy">{business.email}</a></li>
             <li>{business.address}</li>
-            <li><a href={business.instagram} target="_blank" rel="noreferrer" className="hover:text-brand-navy">@athomefamilyservicesllc</a></li>
+            <li>
+              <span>Instagram: </span>
+              <a
+                href={business.instagram}
+                target="_blank"
+                rel="noreferrer"
+                className="text-brand-teal hover:underline"
+                aria-label="Instagram profile for At Home Family Services"
+              >
+                @athomefamilyservicesllc
+              </a>
+            </li>
           </ul>
         </div>
         <div>

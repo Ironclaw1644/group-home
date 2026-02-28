@@ -26,7 +26,7 @@ export default function ContactPage() {
             extraFields={[
               { name: 'preferred_contact_method', label: 'Preferred contact method', type: 'select', options: ['phone', 'email', 'text'] },
               { name: 'subscribe_updates', label: 'Email updates', type: 'checkbox', placeholder: 'I would like occasional updates and announcements by email (optional).' },
-              { name: 'notes', label: 'Message', type: 'textarea', required: true }
+              { name: 'notes', label: 'Message', type: 'textarea', required: true, minLength: 10, helperText: 'Please share at least a short message (10+ characters).' }
             ]}
             summaryLeadLabel="General Contact"
             summaryFields={[

@@ -20,7 +20,7 @@ export default function PlacementInquiryPage() {
             extraFields={[
               { name: 'timeframe', label: 'Timeframe', type: 'select', required: true, options: ['ASAP', '1-2 weeks', '30 days', 'exploring'] },
               { name: 'city_state', label: 'City / State', required: true },
-              { name: 'age_range', label: 'Age range', required: true, placeholder: 'Example: 18-25' },
+              { name: 'age_range', label: 'Age', type: 'number', required: true, min: 18, max: 90, placeholder: '18' },
               { name: 'support_level', label: 'Support level', type: 'select', required: true, options: ['light', 'moderate', 'high', 'unsure'] },
               { name: 'mobility_needs', label: 'Mobility needs (broad)' },
               { name: 'coverage_type', label: 'Coverage type', type: 'select', required: true, options: ['Medicaid waiver', 'private pay', 'other', 'unsure'] },
@@ -35,7 +35,7 @@ export default function PlacementInquiryPage() {
               { name: 'contact_phone', label: 'Phone' },
               { name: 'timeframe', label: 'Timeframe' },
               { name: 'city_state', label: 'Location' },
-              { name: 'age_range', label: 'Age Range' },
+              { name: 'age_range', label: 'Age' },
               { name: 'support_level', label: 'Support Level' },
               { name: 'mobility_needs', label: 'Mobility Needs (broad)', fallback: 'Not provided' },
               { name: 'coverage_type', label: 'Coverage Type' },

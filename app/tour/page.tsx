@@ -15,7 +15,7 @@ export default function TourPage() {
           title="Tour Request"
           extraFields={[
             { name: 'tour_type', label: 'Tour type', type: 'select', required: true, options: ['in-person', 'phone'] },
-            { name: 'preferred_dates_times', label: 'Preferred dates/times', type: 'textarea', required: true, placeholder: 'Example: Tue/Thu afternoons next week' },
+            { name: 'preferred_dates_times', label: 'Preferred dates/times', type: 'textarea', required: true, minLength: 5, placeholder: 'Example: Tue/Thu afternoons next week' },
             { name: 'preferred_contact_method', label: 'Preferred contact method', type: 'select', required: true, options: ['phone', 'email', 'text'] },
             { name: 'notes', label: 'Notes', type: 'textarea' }
           ]}
