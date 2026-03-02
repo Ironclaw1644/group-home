@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "generate:icons": "node scripts/generate-icons.mjs"
+    "generate:icons": "node scripts/generate-icons.mjs",
+    "email:test": "node scripts/send-test-email.mjs",
+    "email:sanity": "node scripts/sanity-blast-skip.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

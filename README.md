@@ -67,6 +67,11 @@ Copy `.env.example` and set:
 - `LEADOPS_SOURCE=athome-family-services-llc`
 - `ADMIN_ALLOWLIST` (comma-separated emails)
 - `NEXT_PUBLIC_SITE_URL`
+- `RESEND_API_KEY`
+- `RESEND_FROM`
+- `RESEND_TO`
+- `RESEND_WEBHOOK_SECRET`
+- `EMAIL_TOKEN_SECRET`
 - `CMS_SUPABASE_URL`
 - `CMS_SUPABASE_SERVICE_ROLE_KEY` (server-only)
 - `CMS_SCHEMA=athome_family_services_llc`
@@ -121,7 +126,7 @@ The generator script is `scripts/generate-icons.mjs` and uses the local ImageMag
 ## Vercel Deployment Notes
 
 - Set all env vars in Vercel Project Settings.
-- `NEXT_PUBLIC_SITE_URL` should match the deployed domain (temporary: `https://group-home.vercel.app`).
+- `NEXT_PUBLIC_SITE_URL` should match the deployed domain (`https://athomefamilyservices.com`).
 - Configure `CMS_SUPABASE_URL`, `CMS_SUPABASE_SERVICE_ROLE_KEY`, and `CMS_SCHEMA=athome_family_services_llc`.
 - Gallery manager currently stores image URLs (not uploaded binaries). Use persistent object storage for production uploads if you add file upload support.
 
@@ -132,6 +137,28 @@ The generator script is `scripts/generate-icons.mjs` and uses the local ImageMag
 - JSON-LD LocalBusiness schema
 - `robots.txt` and `sitemap.xml`
 - Internal links across navigation/footer/landing pages/resources
+
+## Email setup (Resend)
+
+Set the following in Vercel:
+
+- `RESEND_API_KEY`
+- `RESEND_FROM` (example: `At Home Family Services <updates@athomefamilyservices.com>`)
+- `RESEND_TO` (owner/admin notification address)
+- `RESEND_WEBHOOK_SECRET` (shared secret for webhook verification)
+- `EMAIL_TOKEN_SECRET` (for signed unsubscribe links)
+
+Webhook route:
+
+- URL: `https://athomefamilyservices.com/api/resend/webhook`
+- Add header: `x-webhook-secret: <RESEND_WEBHOOK_SECRET>`
+- Enable Resend webhook events for bounces and complaints.
+
+Behavior:
+
+- Blasts send only to subscribers with `status=active`.
+- `unsubscribed`, `bounced`, and `complaint` statuses are suppressed.
+- Every blast includes an unsubscribe link.
 
 ## Notes / Follow-up Enhancements
 

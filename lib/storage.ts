@@ -14,6 +14,7 @@ type DbShape = {
 };
 
 const seedGuards = new Map<keyof DbShape, Promise<void>>();
+const SUPPRESSED_STATUSES = new Set<Subscriber['status']>(['unsubscribed', 'bounced', 'complaint']);
 
 function nowIso() {
   return new Date().toISOString();
@@ -39,13 +40,19 @@ function mapAnnouncement(row: CmsTables['announcements']['Row']): Announcement {
 }
 
 function mapSubscriber(row: CmsTables['subscribers']['Row']): Subscriber {
+  const status = (row.status || (row.opted_in ? 'active' : 'unsubscribed')) as Subscriber['status'];
   return {
     id: row.id,
     email: row.email,
     name: row.name || undefined,
     source: row.source,
-    opted_in: row.opted_in,
-    created_at: row.created_at
+    opted_in: status === 'active',
+    status,
+    unsubscribed_at: row.unsubscribed_at || undefined,
+    bounced_at: row.bounced_at || undefined,
+    complaint_at: row.complaint_at || undefined,
+    unsubscribe_reason: row.unsubscribe_reason || undefined,
+    created_at: row.created_at,
   };
 }
 
@@ -196,23 +203,59 @@ export async function deleteAnnouncement(id: string) {
   assertNoError(error);
 }
 
-export async function upsertSubscriber(input: Omit<Subscriber, 'id' | 'created_at'> & { id?: string }) {
+export async function upsertSubscriber(input: {
+  id?: string;
+  email: string;
+  name?: string;
+  source: string;
+  opted_in?: boolean;
+  status?: Subscriber['status'];
+  forceResubscribe?: boolean;
+  unsubscribe_reason?: string;
+}) {
   const supabase = cmsServerClient();
   const email = input.email.trim().toLowerCase();
   if (!email) throw new Error('Subscriber email is required');
   const now = nowIso();
 
   let createdAt = now;
-  const existing = await supabase.from('subscribers').select('id, created_at').eq('email', email).maybeSingle();
+  const existing = await supabase
+    .from('subscribers')
+    .select('id, created_at, status, unsubscribed_at, bounced_at, complaint_at, unsubscribe_reason')
+    .eq('email', email)
+    .maybeSingle();
   assertNoError(existing.error);
   if (existing.data?.created_at) createdAt = existing.data.created_at;
+  const existingStatus = (existing.data?.status || null) as Subscriber['status'] | null;
+  const isSuppressed = existingStatus ? SUPPRESSED_STATUSES.has(existingStatus) : false;
+
+  const requestedStatus =
+    input.status || (input.opted_in === false ? 'unsubscribed' : 'active');
+  const nextStatus = isSuppressed && !input.forceResubscribe ? existingStatus! : requestedStatus;
 
   const row: CmsTables['subscribers']['Insert'] = {
     id: existing.data?.id || input.id || randomUUID(),
     email,
     name: input.name?.trim() || null,
     source: input.source,
-    opted_in: Boolean(input.opted_in),
+    opted_in: nextStatus === 'active',
+    status: nextStatus,
+    unsubscribed_at:
+      nextStatus === 'unsubscribed'
+        ? existing.data?.unsubscribed_at || now
+        : null,
+    bounced_at:
+      nextStatus === 'bounced'
+        ? existing.data?.bounced_at || now
+        : null,
+    complaint_at:
+      nextStatus === 'complaint'
+        ? existing.data?.complaint_at || now
+        : null,
+    unsubscribe_reason:
+      nextStatus === 'unsubscribed'
+        ? input.unsubscribe_reason || existing.data?.unsubscribe_reason || null
+        : null,
     created_at: createdAt,
     updated_at: now
   };
@@ -220,6 +263,53 @@ export async function upsertSubscriber(input: Omit<Subscriber, 'id' | 'created_a
   const { data, error } = await supabase.from('subscribers').upsert(row, { onConflict: 'email' }).select('*').single();
   assertNoError(error);
   return mapSubscriber(data as CmsTables['subscribers']['Row']);
+}
+
+export async function getSubscriberByEmail(email: string) {
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return null;
+  const supabase = cmsServerClient();
+  const { data, error } = await supabase.from('subscribers').select('*').eq('email', normalized).maybeSingle();
+  assertNoError(error);
+  return data ? mapSubscriber(data as CmsTables['subscribers']['Row']) : null;
+}
+
+export async function updateSubscriberStatusById(id: string, status: Subscriber['status'], options?: { reason?: string; forceResubscribe?: boolean }) {
+  const supabase = cmsServerClient();
+  const { data, error } = await supabase.from('subscribers').select('*').eq('id', id).maybeSingle();
+  assertNoError(error);
+  if (!data) throw new Error('Subscriber not found');
+  const row = mapSubscriber(data as CmsTables['subscribers']['Row']);
+
+  if (SUPPRESSED_STATUSES.has(row.status) && status === 'active' && !options?.forceResubscribe) {
+    throw new Error('Subscriber is suppressed. Use forceResubscribe to reactivate.');
+  }
+
+  return upsertSubscriber({
+    id: row.id,
+    email: row.email,
+    name: row.name,
+    source: row.source,
+    status,
+    forceResubscribe: options?.forceResubscribe,
+    unsubscribe_reason: options?.reason
+  });
+}
+
+export async function updateSubscriberStatusByEmail(email: string, status: Subscriber['status'], options?: { reason?: string; forceResubscribe?: boolean }) {
+  const existing = await getSubscriberByEmail(email);
+  if (!existing) {
+    return upsertSubscriber({
+      email,
+      name: '',
+      source: 'webhook',
+      status,
+      opted_in: status === 'active',
+      forceResubscribe: options?.forceResubscribe,
+      unsubscribe_reason: options?.reason
+    });
+  }
+  return updateSubscriberStatusById(existing.id, status, options);
 }
 
 export async function addLeadNote(leadId: string, note: string) {
@@ -382,4 +472,119 @@ export async function exportLocalLeads() {
   }
 
   return rows.map((row) => ({ ...row, notes_count: noteCounts.get(row.id) || 0 }));
+}
+
+export async function logEmailEvent(input: { email: string; type: string; meta?: Record<string, unknown> }) {
+  const email = input.email.trim().toLowerCase();
+  if (!email) return;
+  const supabase = cmsServerClient();
+  const { error } = await supabase.from('email_events').insert({
+    email,
+    type: input.type,
+    meta: (input.meta || {}) as any
+  });
+  assertNoError(error);
+}
+
+export async function listSubscribersForBlast(source?: string) {
+  const supabase = cmsServerClient();
+  let query = supabase.from('subscribers').select('*').order('created_at', { ascending: false });
+  if (source) query = query.eq('source', source);
+  const { data, error } = await query;
+  assertNoError(error);
+  return ((data as CmsTables['subscribers']['Row'][] | null) || []).map(mapSubscriber);
+}
+
+export async function listEmailCampaigns(limit = 20) {
+  const supabase = cmsServerClient();
+  const { data, error } = await supabase
+    .from('email_campaigns')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  assertNoError(error);
+  return (data || []) as CmsTables['email_campaigns']['Row'][];
+}
+
+export async function getEmailCampaignByIdempotencyKey(idempotencyKey: string) {
+  const supabase = cmsServerClient();
+  const { data, error } = await supabase
+    .from('email_campaigns')
+    .select('*')
+    .eq('idempotency_key', idempotencyKey)
+    .maybeSingle();
+  assertNoError(error);
+  return (data || null) as CmsTables['email_campaigns']['Row'] | null;
+}
+
+export async function createEmailCampaign(input: {
+  subject: string;
+  previewText?: string;
+  body: string;
+  audienceSource?: string;
+  idempotencyKey: string;
+}) {
+  const supabase = cmsServerClient();
+  const existing = await getEmailCampaignByIdempotencyKey(input.idempotencyKey);
+  if (existing) return existing;
+
+  const row: CmsTables['email_campaigns']['Insert'] = {
+    subject: input.subject,
+    preview_text: input.previewText || null,
+    body: input.body,
+    audience_source: input.audienceSource || null,
+    idempotency_key: input.idempotencyKey,
+    status: 'sending',
+    total_recipients: 0,
+    sent_count: 0,
+    skipped_count: 0,
+    created_at: nowIso(),
+    updated_at: nowIso()
+  };
+  const { data, error } = await supabase.from('email_campaigns').insert(row).select('*').single();
+  assertNoError(error);
+  return data as CmsTables['email_campaigns']['Row'];
+}
+
+export async function recordEmailCampaignRecipient(input: {
+  campaignId: string;
+  email: string;
+  status: 'sent' | 'skipped';
+  reason?: string;
+}) {
+  const supabase = cmsServerClient();
+  const { error } = await supabase.from('email_campaign_recipients').upsert(
+    {
+      campaign_id: input.campaignId,
+      email: input.email.trim().toLowerCase(),
+      status: input.status,
+      reason: input.reason || null,
+      sent_at: input.status === 'sent' ? nowIso() : null,
+      created_at: nowIso()
+    },
+    { onConflict: 'campaign_id,email' }
+  );
+  assertNoError(error);
+}
+
+export async function finalizeEmailCampaign(input: {
+  campaignId: string;
+  status: 'sent' | 'failed';
+  totalRecipients: number;
+  sentCount: number;
+  skippedCount: number;
+}) {
+  const supabase = cmsServerClient();
+  const { error } = await supabase
+    .from('email_campaigns')
+    .update({
+      status: input.status,
+      total_recipients: input.totalRecipients,
+      sent_count: input.sentCount,
+      skipped_count: input.skippedCount,
+      sent_at: input.status === 'sent' ? nowIso() : null,
+      updated_at: nowIso()
+    })
+    .eq('id', input.campaignId);
+  assertNoError(error);
 }

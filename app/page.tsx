@@ -5,6 +5,7 @@ import { Section, Card, Button, Badge } from '@/components/ui';
 import { AnnouncementList } from '@/components/announcement-list';
 import { business } from '@/lib/content';
 import { Reveal } from '@/components/reveal';
+import { getAnnouncements } from '@/lib/announcements';
 
 const homeHighlights = [
   {
@@ -24,7 +25,8 @@ const homeHighlights = [
   }
 ] as const;
 
-export default function HomePage() {
+export default async function HomePage() {
+  const announcements = await getAnnouncements({ currentPath: '/', limit: 3 });
   const heroTitle = 'A warm, supportive home built on dignity, trust, and daily care.';
   const heroSubtitle = '24/7 supportive living services for adults with developmental disabilities in North Chesterfield, Virginia.';
   const heroCta = 'Start a Placement Inquiry';
@@ -107,7 +109,7 @@ export default function HomePage() {
 
       <Section title="Current announcements" description="Updates about tours, openings, and scheduling.">
         <Reveal>
-          <AnnouncementList currentPath="/" />
+          <AnnouncementList announcements={announcements} />
         </Reveal>
         <div className="mt-4"><Link href="/announcements" className="text-sm font-semibold text-brand-teal hover:text-brand-navy">See all announcements</Link></div>
       </Section>

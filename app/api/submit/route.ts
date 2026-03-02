@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { forwardLead } from '@/lib/leadops';
 import { assertTopLevelLead, parseLeadMeta } from '@/lib/forms';
 import { insertLocalLead, markLeadForwardError, markLeadForwarded, upsertSubscriber } from '@/lib/storage';
+import { sendLeadTransactionalEmails } from '@/lib/email/service';
 
 function parseReferer(input?: string | null) {
   if (!input) return { referrer: undefined as string | undefined, pagePath: undefined as string | undefined, search: new URLSearchParams() };
@@ -69,6 +70,13 @@ export async function POST(req: Request) {
       forwardError = error instanceof Error ? error.message : 'LeadOps forwarding failed';
       console.error('LeadOps forwarding failed', { leadId: localLead.id, error: forwardError });
       await markLeadForwardError(localLead.id, forwardError);
+    }
+
+    try {
+      await sendLeadTransactionalEmails(localLead);
+    } catch (emailError) {
+      const message = emailError instanceof Error ? emailError.message : 'Transactional email failed';
+      console.error('Transactional email failed', { leadId: localLead.id, error: message });
     }
 
     return NextResponse.json({ ok: true, leadId: localLead.id, forwarded, forwardError });

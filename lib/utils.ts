@@ -1,11 +1,13 @@
 import { clsx, type ClassValue } from 'clsx';
 
+export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://athomefamilyservices.com').replace(/\/$/, '');
+
 export function cn(...inputs: ClassValue[]) {
   return clsx(inputs);
 }
 
 export function siteUrl() {
-  return process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') || 'https://group-home.vercel.app';
+  return SITE_URL;
 }
 
 export function absoluteUrl(path = '/') {

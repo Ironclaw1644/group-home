@@ -53,11 +53,62 @@ export type Database = {
           name: string | null;
           source: string;
           opted_in: boolean;
+          status: string;
+          unsubscribed_at: string | null;
+          bounced_at: string | null;
+          complaint_at: string | null;
+          unsubscribe_reason: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: Partial<Database['athome_family_services_llc']['Tables']['subscribers']['Row']> & Pick<Database['athome_family_services_llc']['Tables']['subscribers']['Row'], 'id' | 'email' | 'source' | 'opted_in'>;
         Update: Partial<Database['athome_family_services_llc']['Tables']['subscribers']['Row']>;
+        Relationships: [];
+      };
+      email_events: {
+        Row: {
+          id: string;
+          email: string;
+          type: string;
+          meta: Json;
+          created_at: string;
+        };
+        Insert: Partial<Database['athome_family_services_llc']['Tables']['email_events']['Row']>;
+        Update: Partial<Database['athome_family_services_llc']['Tables']['email_events']['Row']>;
+        Relationships: [];
+      };
+      email_campaigns: {
+        Row: {
+          id: string;
+          subject: string;
+          preview_text: string | null;
+          body: string;
+          audience_source: string | null;
+          idempotency_key: string;
+          status: string;
+          sent_at: string | null;
+          total_recipients: number;
+          sent_count: number;
+          skipped_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: Partial<Database['athome_family_services_llc']['Tables']['email_campaigns']['Row']>;
+        Update: Partial<Database['athome_family_services_llc']['Tables']['email_campaigns']['Row']>;
+        Relationships: [];
+      };
+      email_campaign_recipients: {
+        Row: {
+          id: string;
+          campaign_id: string;
+          email: string;
+          status: string;
+          reason: string | null;
+          sent_at: string | null;
+          created_at: string;
+        };
+        Insert: Partial<Database['athome_family_services_llc']['Tables']['email_campaign_recipients']['Row']>;
+        Update: Partial<Database['athome_family_services_llc']['Tables']['email_campaign_recipients']['Row']>;
         Relationships: [];
       };
       lead_notes: {
@@ -107,6 +158,10 @@ export type Database = {
           utm_content: string | null;
           device: string | null;
           city: string | null;
+          region: string | null;
+          country: string | null;
+          ip_hash: string | null;
+          user_agent: string | null;
           cta_name: string | null;
           form_name: string | null;
         };

@@ -25,6 +25,11 @@ export type Subscriber = {
   name?: string;
   source: string;
   opted_in: boolean;
+  status: 'active' | 'unsubscribed' | 'bounced' | 'complaint';
+  unsubscribed_at?: string;
+  bounced_at?: string;
+  complaint_at?: string;
+  unsubscribe_reason?: string;
   created_at: string;
 };
 

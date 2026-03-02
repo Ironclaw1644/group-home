@@ -8,13 +8,14 @@ import { MobileStickyCTA } from '@/components/mobile-sticky-cta';
 import { StructuredData } from '@/components/structured-data';
 import { ActivityTracker } from '@/components/activity-tracker';
 import { buildMetadata, localBusinessJsonLd } from '@/lib/site';
+import { SITE_URL } from '@/lib/utils';
 
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-sans' });
 const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-display' });
 
 export const metadata: Metadata = {
   ...buildMetadata({ title: 'At Home Family Services, LLC | Supportive Living in North Chesterfield, VA' }),
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://group-home.vercel.app'),
+  metadataBase: new URL(SITE_URL),
   manifest: '/site.webmanifest',
   icons: {
     icon: [

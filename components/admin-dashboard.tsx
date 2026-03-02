@@ -16,7 +16,6 @@ type ActivityData = {
   rangeDays: 7 | 30 | 90;
   overview: {
     totalVisits: number;
-    uniqueSessions: number;
     placementInquiries: number;
     tourRequests: number;
     conversionRate: number;
@@ -29,44 +28,33 @@ type ActivityData = {
     conversions: number;
     conversionRate: number;
   }>;
-  topEntryPages: Array<{ page: string; visits: number }>;
-  topExitPages: Array<{ page: string; visits: number }>;
-  trafficSources: Array<{
-    source: string;
-    utmCampaign: string;
-    device: string;
-    city: string;
-    visits: number;
-    conversions: number;
-  }>;
   deviceBreakdown: {
     mobile: number;
     desktop: number;
     tablet: number;
   };
   topCities: Array<{
-    city: string;
-    visits: number;
-    conversions: number;
-    conversionRate: number;
-  }>;
-  funnel: {
-    visits: number;
-    ctaClicks: number;
-    formStarted: number | null;
-    formSubmitted: number;
-  };
-  utmPerformance: Array<{
-    utmSource: string;
-    utmMedium: string;
-    utmCampaign: string;
+    location: string;
     visits: number;
     conversions: number;
     conversionRate: number;
   }>;
 };
 
-const tabs = ['leads', 'announcements', 'subscribers', 'activity'] as const;
+type EmailCampaign = {
+  id: string;
+  subject: string;
+  preview_text: string | null;
+  audience_source: string | null;
+  status: string;
+  sent_at: string | null;
+  total_recipients: number;
+  sent_count: number;
+  skipped_count: number;
+  created_at: string;
+};
+
+const tabs = ['leads', 'announcements', 'subscribers', 'activity', 'email'] as const;
 type Tab = (typeof tabs)[number];
 
 export function AdminDashboard({
@@ -86,6 +74,7 @@ export function AdminDashboard({
   const [status, setStatus] = useState('');
   const [q, setQ] = useState('');
   const [leadTypeFilter, setLeadTypeFilter] = useState('');
+  const [mobileLeadFiltersOpen, setMobileLeadFiltersOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [pageSize] = useState(20);
@@ -96,6 +85,16 @@ export function AdminDashboard({
   const [activityData, setActivityData] = useState<ActivityData | null>(null);
   const [loadingActivity, setLoadingActivity] = useState(false);
   const [activityError, setActivityError] = useState<string | null>(null);
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailPreview, setEmailPreview] = useState('');
+  const [emailBody, setEmailBody] = useState('');
+  const [emailSourceFilter, setEmailSourceFilter] = useState('');
+  const [campaignIdempotencyKey, setCampaignIdempotencyKey] = useState(() => `${Date.now()}`);
+  const [campaigns, setCampaigns] = useState<EmailCampaign[]>([]);
+  const [sendingCampaign, setSendingCampaign] = useState(false);
+  const [testingCampaign, setTestingCampaign] = useState(false);
+  const [emailMessage, setEmailMessage] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   async function fetchLeads() {
     setLoadingLeads(true);
@@ -146,6 +145,90 @@ export function AdminDashboard({
     }
   }
 
+  async function fetchCampaigns() {
+    try {
+      const res = await fetch('/api/admin/email-blasts');
+      if (res.status === 401) {
+        window.location.href = '/admin/login';
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load campaigns');
+      setCampaigns(Array.isArray(data) ? data : []);
+    } catch (error) {
+      setEmailError(error instanceof Error ? error.message : 'Failed to load campaigns');
+    }
+  }
+
+  async function sendTestEmail() {
+    setTestingCampaign(true);
+    setEmailError(null);
+    setEmailMessage(null);
+    try {
+      const res = await fetch('/api/admin/email-blasts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'test',
+          subject: emailSubject,
+          previewText: emailPreview,
+          body: emailBody
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send test email');
+      setEmailMessage('Test email sent to RESEND_TO.');
+    } catch (error) {
+      setEmailError(error instanceof Error ? error.message : 'Failed to send test email');
+    } finally {
+      setTestingCampaign(false);
+    }
+  }
+
+  async function sendCampaign() {
+    setSendingCampaign(true);
+    setEmailError(null);
+    setEmailMessage(null);
+    try {
+      const res = await fetch('/api/admin/email-blasts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'send',
+          subject: emailSubject,
+          previewText: emailPreview,
+          body: emailBody,
+          audienceSource: emailSourceFilter || undefined,
+          idempotencyKey: campaignIdempotencyKey
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send campaign');
+      setEmailMessage(data.alreadyProcessed ? 'This campaign was already processed.' : 'Campaign sent.');
+      setCampaignIdempotencyKey(`${Date.now()}`);
+      await fetchCampaigns();
+    } catch (error) {
+      setEmailError(error instanceof Error ? error.message : 'Failed to send campaign');
+    } finally {
+      setSendingCampaign(false);
+    }
+  }
+
+  async function setSubscriberStatus(id: string, nextStatus: 'active' | 'unsubscribed' | 'bounced' | 'complaint', forceResubscribe = false) {
+    try {
+      const res = await fetch('/api/admin/subscribers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: nextStatus, force_resubscribe: forceResubscribe })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update subscriber');
+      setSubscribers((prev) => prev.map((item) => (item.id === id ? data : item)));
+    } catch (error) {
+      setEmailError(error instanceof Error ? error.message : 'Failed to update subscriber');
+    }
+  }
+
   useEffect(() => {
     fetchLeads();
   }, [status, q, page, pageSize, leadTypeFilter]);
@@ -154,6 +237,11 @@ export function AdminDashboard({
     if (tab !== 'activity') return;
     fetchActivity(activityDays);
   }, [tab, activityDays]);
+
+  useEffect(() => {
+    if (tab !== 'email') return;
+    fetchCampaigns();
+  }, [tab]);
 
   const leadCountLabel = useMemo(() => {
     if (loadingLeads) return 'Loading leads…';
@@ -304,23 +392,34 @@ export function AdminDashboard({
         {tab === 'leads' && (
           <div className="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
             <Card>
-              <div className="grid gap-3 md:grid-cols-5">
+              <div className="mb-3 flex items-center justify-between gap-2 md:hidden">
+                <button
+                  onClick={() => setMobileLeadFiltersOpen((prev) => !prev)}
+                  className="rounded-xl border border-brand-navy/10 bg-white px-3 py-2 text-sm font-medium"
+                >
+                  {mobileLeadFiltersOpen ? 'Hide Filters' : 'Show Filters'}
+                </button>
+                <div className="rounded-xl border border-brand-navy/10 px-3 py-2 text-xs text-brand-slate">
+                  Page {page} • {total}
+                </div>
+              </div>
+              <div className={`${mobileLeadFiltersOpen ? 'grid' : 'hidden'} gap-3 md:grid md:grid-cols-5`}>
                 <input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                   placeholder="Search name/email/message"
-                  className="rounded-xl border border-brand-navy/10 px-3 py-2 text-sm md:col-span-2"
+                  className="w-full rounded-xl border border-brand-navy/10 px-3 py-2 text-sm md:col-span-2"
                 />
                 <input
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
                   placeholder="status"
-                  className="rounded-xl border border-brand-navy/10 px-3 py-2 text-sm"
+                  className="w-full rounded-xl border border-brand-navy/10 px-3 py-2 text-sm"
                 />
                 <select
                   value={leadTypeFilter}
                   onChange={(e) => setLeadTypeFilter(e.target.value)}
-                  className="rounded-xl border border-brand-navy/10 px-3 py-2 text-sm"
+                  className="w-full rounded-xl border border-brand-navy/10 px-3 py-2 text-sm"
                 >
                   <option value="">All lead types</option>
                   <option value="placement">placement</option>
@@ -328,7 +427,7 @@ export function AdminDashboard({
                   <option value="general">general</option>
                   <option value="career">career</option>
                 </select>
-                <div className="rounded-xl border border-brand-navy/10 px-3 py-2 text-xs text-brand-slate">
+                <div className="hidden rounded-xl border border-brand-navy/10 px-3 py-2 text-xs text-brand-slate md:block">
                   Page {page} • {total} total
                 </div>
               </div>
@@ -356,7 +455,7 @@ export function AdminDashboard({
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <p className="font-semibold text-brand-navy">{lead.contact_name || 'Unknown'}</p>
-                          <p className="text-xs text-brand-slate">{lead.contact_email || ''}</p>
+                          <p className="break-all text-xs text-brand-slate">{lead.contact_email || ''}</p>
                         </div>
                         <Badge>{lead.forwarded_to_leadops ? 'Forwarded' : 'Not forwarded'}</Badge>
                       </div>
@@ -556,13 +655,28 @@ export function AdminDashboard({
                   Export CSV
                 </a>
               </div>
+              {emailError ? <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{emailError}</p> : null}
               <div className="mt-4 space-y-2 md:hidden">
                 {subscribers.map((subscriber) => (
                   <div key={subscriber.id} className="rounded-xl border border-brand-navy/10 p-3 text-sm">
                     <p className="font-semibold">{subscriber.email}</p>
                     <p className="text-xs text-brand-slate">
-                      {subscriber.name || 'No name'} • {subscriber.source} • {subscriber.created_at.slice(0, 10)}
+                      {subscriber.name || 'No name'} • {subscriber.source} • {subscriber.status} • {subscriber.created_at.slice(0, 10)}
                     </p>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button onClick={() => setSubscriberStatus(subscriber.id, 'unsubscribed')} className="rounded-lg border px-2 py-1 text-xs">
+                        Unsubscribe
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (!window.confirm('This subscriber is suppressed. Re-enable marketing emails?')) return;
+                          void setSubscriberStatus(subscriber.id, 'active', true);
+                        }}
+                        className="rounded-lg border px-2 py-1 text-xs"
+                      >
+                        Re-enable
+                      </button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -573,7 +687,9 @@ export function AdminDashboard({
                       <th className="px-2 py-2">Email</th>
                       <th className="px-2 py-2">Name</th>
                       <th className="px-2 py-2">Source</th>
+                      <th className="px-2 py-2">Status</th>
                       <th className="px-2 py-2">Date</th>
+                      <th className="px-2 py-2">Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -582,7 +698,24 @@ export function AdminDashboard({
                         <td className="px-2 py-2">{subscriber.email}</td>
                         <td className="px-2 py-2">{subscriber.name || ''}</td>
                         <td className="px-2 py-2">{subscriber.source}</td>
+                        <td className="px-2 py-2">{subscriber.status}</td>
                         <td className="px-2 py-2">{subscriber.created_at.slice(0, 10)}</td>
+                        <td className="px-2 py-2">
+                          <div className="flex gap-2">
+                            <button onClick={() => setSubscriberStatus(subscriber.id, 'unsubscribed')} className="rounded-lg border px-2 py-1 text-xs">
+                              Unsubscribe
+                            </button>
+                            <button
+                              onClick={() => {
+                                if (!window.confirm('This subscriber is suppressed. Re-enable marketing emails?')) return;
+                                void setSubscriberStatus(subscriber.id, 'active', true);
+                              }}
+                              className="rounded-lg border px-2 py-1 text-xs"
+                            >
+                              Re-enable
+                            </button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -637,7 +770,6 @@ export function AdminDashboard({
               <>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                   <MetricCard label="Total Visits" value={activityData.overview.totalVisits} />
-                  <MetricCard label="Unique Sessions" value={activityData.overview.uniqueSessions} />
                   <MetricCard label="Placement Inquiries" value={activityData.overview.placementInquiries} />
                   <MetricCard label="Tour Requests" value={activityData.overview.tourRequests} />
                   <MetricCard label="Conversion Rate" value={`${activityData.overview.conversionRate}%`} />
@@ -673,40 +805,6 @@ export function AdminDashboard({
                       </tbody>
                     </table>
                   </div>
-                  <div className="mt-4 grid gap-4 md:grid-cols-2">
-                    <SimpleList title="Top Entry Pages" items={activityData.topEntryPages.map((item) => `${item.page} (${item.visits})`)} />
-                    <SimpleList title="Top Exit Pages" items={activityData.topExitPages.map((item) => `${item.page} (${item.visits})`)} />
-                  </div>
-                </Card>
-
-                <Card>
-                  <h3 className="text-base font-semibold text-brand-navy">Traffic Sources</h3>
-                  <div className="-mx-4 mt-4 w-full overflow-x-auto px-4">
-                    <table className="min-w-full text-sm">
-                      <thead>
-                        <tr className="border-b text-left text-xs uppercase tracking-wider text-brand-slate">
-                          <th className="px-2 py-2">Source</th>
-                          <th className="px-2 py-2">UTM Campaign</th>
-                          <th className="px-2 py-2">Device</th>
-                          <th className="px-2 py-2">City/State</th>
-                          <th className="px-2 py-2">Visits</th>
-                          <th className="px-2 py-2">Conversions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {activityData.trafficSources.map((item, index) => (
-                          <tr key={`${item.source}-${index}`} className="border-b border-brand-navy/5">
-                            <td className="px-2 py-2">{item.source}</td>
-                            <td className="px-2 py-2">{item.utmCampaign}</td>
-                            <td className="px-2 py-2">{item.device}</td>
-                            <td className="px-2 py-2">{item.city}</td>
-                            <td className="px-2 py-2">{item.visits}</td>
-                            <td className="px-2 py-2">{item.conversions}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
                 </Card>
 
                 <div className="grid gap-5 lg:grid-cols-2">
@@ -726,7 +824,7 @@ export function AdminDashboard({
                       <table className="min-w-full text-sm">
                         <thead>
                           <tr className="border-b text-left text-xs uppercase tracking-wider text-brand-slate">
-                            <th className="px-2 py-2">City</th>
+                            <th className="px-2 py-2">Location</th>
                             <th className="px-2 py-2">Visits</th>
                             <th className="px-2 py-2">Conversions</th>
                             <th className="px-2 py-2">Conversion %</th>
@@ -734,8 +832,8 @@ export function AdminDashboard({
                         </thead>
                         <tbody>
                           {activityData.topCities.map((item) => (
-                            <tr key={item.city} className="border-b border-brand-navy/5">
-                              <td className="px-2 py-2">{item.city}</td>
+                            <tr key={item.location} className="border-b border-brand-navy/5">
+                              <td className="px-2 py-2">{item.location}</td>
                               <td className="px-2 py-2">{item.visits}</td>
                               <td className="px-2 py-2">{item.conversions}</td>
                               <td className="px-2 py-2">{item.conversionRate}%</td>
@@ -748,62 +846,97 @@ export function AdminDashboard({
                 </div>
 
                 <Card>
-                  <h3 className="text-base font-semibold text-brand-navy">Conversion Funnel</h3>
-                  <div className="mt-4 grid gap-3 sm:grid-cols-4">
-                    <MetricCard label="Visits" value={activityData.funnel.visits} compact />
-                    <MetricCard label="CTA Clicks" value={activityData.funnel.ctaClicks} compact />
-                    <MetricCard
-                      label="Form Started"
-                      value={activityData.funnel.formStarted === null ? 'Not tracked yet' : activityData.funnel.formStarted}
-                      compact
-                    />
-                    <MetricCard label="Form Submitted" value={activityData.funnel.formSubmitted} compact />
-                  </div>
-                </Card>
-
-                <Card>
-                  <h3 className="text-base font-semibold text-brand-navy">UTM Campaign Performance</h3>
-                  <div className="-mx-4 mt-4 w-full overflow-x-auto px-4">
-                    <table className="min-w-full text-sm">
-                      <thead>
-                        <tr className="border-b text-left text-xs uppercase tracking-wider text-brand-slate">
-                          <th className="px-2 py-2">utm_source</th>
-                          <th className="px-2 py-2">utm_medium</th>
-                          <th className="px-2 py-2">utm_campaign</th>
-                          <th className="px-2 py-2">Visits</th>
-                          <th className="px-2 py-2">Conversions</th>
-                          <th className="px-2 py-2">Conversion %</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {activityData.utmPerformance.map((item, index) => (
-                          <tr key={`${item.utmCampaign}-${index}`} className="border-b border-brand-navy/5">
-                            <td className="px-2 py-2">{item.utmSource}</td>
-                            <td className="px-2 py-2">{item.utmMedium}</td>
-                            <td className="px-2 py-2">{item.utmCampaign}</td>
-                            <td className="px-2 py-2">{item.visits}</td>
-                            <td className="px-2 py-2">{item.conversions}</td>
-                            <td className="px-2 py-2">{item.conversionRate}%</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </Card>
-
-                <Card>
                   <h3 className="text-base font-semibold text-brand-navy">How to Use This Page</h3>
                   <ul className="mt-3 space-y-2 text-sm text-brand-slate">
-                    <li><span className="font-semibold text-brand-navy">Visit:</span> Each page load tracked as a page view.</li>
-                    <li><span className="font-semibold text-brand-navy">Session:</span> A single visitor journey grouped by an anonymous browser session ID.</li>
-                    <li><span className="font-semibold text-brand-navy">Conversion:</span> A completed form submission (placement, tour, or contact).</li>
-                    <li><span className="font-semibold text-brand-navy">Why top pages matter:</span> High-traffic pages with low conversion rate usually need clearer calls-to-action.</li>
-                    <li><span className="font-semibold text-brand-navy">How to use UTMs:</span> Add UTMs to campaign links so this dashboard can attribute traffic and leads accurately.</li>
-                    <li><span className="font-semibold text-brand-navy">What to change:</span> If a page has views but low conversions, improve headline clarity, trust content, and CTA placement.</li>
+                    <li><span className="font-semibold text-brand-navy">Top Pages:</span> Focus updates where traffic is high but inquiries are low.</li>
+                    <li><span className="font-semibold text-brand-navy">Device Mix:</span> If mobile is highest, prioritize phone-sized layout fixes first.</li>
+                    <li><span className="font-semibold text-brand-navy">Top Locations:</span> Use city/region trends to guide local outreach.</li>
+                    <li><span className="font-semibold text-brand-navy">Conversions:</span> Placement, tour, and contact submissions show what is working.</li>
                   </ul>
                 </Card>
               </>
             ) : null}
+          </div>
+        )}
+
+        {tab === 'email' && (
+          <div className="grid gap-5 xl:grid-cols-[0.95fr_1.05fr]">
+            <Card>
+              <h2 className="text-lg font-semibold text-brand-navy">Email Blasts</h2>
+              <p className="mt-1 text-sm text-brand-slate">Send updates to active subscribers only. Unsubscribed and bounced emails are skipped.</p>
+              <div className="mt-4 space-y-3">
+                <input
+                  value={emailSubject}
+                  onChange={(event) => setEmailSubject(event.target.value)}
+                  placeholder="Subject"
+                  className="w-full rounded-xl border border-brand-navy/10 px-3 py-2 text-sm"
+                />
+                <input
+                  value={emailPreview}
+                  onChange={(event) => setEmailPreview(event.target.value)}
+                  placeholder="Preview text (optional)"
+                  className="w-full rounded-xl border border-brand-navy/10 px-3 py-2 text-sm"
+                />
+                <textarea
+                  value={emailBody}
+                  onChange={(event) => setEmailBody(event.target.value)}
+                  placeholder="Body (plain text or markdown bullets)"
+                  className="min-h-52 w-full rounded-xl border border-brand-navy/10 px-3 py-2 text-sm"
+                />
+                <select
+                  value={emailSourceFilter}
+                  onChange={(event) => setEmailSourceFilter(event.target.value)}
+                  className="w-full rounded-xl border border-brand-navy/10 px-3 py-2 text-sm"
+                >
+                  <option value="">Active subscribers (all sources)</option>
+                  <option value="placement">placement</option>
+                  <option value="tour">tour</option>
+                  <option value="general">general</option>
+                  <option value="contact">contact</option>
+                  <option value="newsletter">newsletter</option>
+                </select>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <button
+                  onClick={sendTestEmail}
+                  disabled={testingCampaign || !emailSubject.trim() || !emailBody.trim()}
+                  className="rounded-xl border border-brand-navy/10 bg-white px-3 py-2 text-sm font-medium disabled:opacity-60"
+                >
+                  {testingCampaign ? 'Sending test...' : 'Send Test Email'}
+                </button>
+                <button
+                  onClick={sendCampaign}
+                  disabled={sendingCampaign || !emailSubject.trim() || !emailBody.trim()}
+                  className="rounded-xl bg-brand-navy px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  {sendingCampaign ? 'Sending campaign...' : 'Send Campaign'}
+                </button>
+              </div>
+              {emailMessage ? <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-700">{emailMessage}</p> : null}
+              {emailError ? <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700">{emailError}</p> : null}
+            </Card>
+
+            <Card>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-brand-navy">Recent Campaigns</h3>
+                <button onClick={fetchCampaigns} className="rounded-lg border px-3 py-1.5 text-xs">Refresh</button>
+              </div>
+              <div className="mt-4 space-y-3">
+                {campaigns.length ? campaigns.map((campaign) => (
+                  <div key={campaign.id} className="rounded-xl border border-brand-navy/10 p-3">
+                    <p className="font-semibold text-brand-navy">{campaign.subject}</p>
+                    <p className="mt-1 text-xs text-brand-slate">
+                      {campaign.status} • recipients {campaign.total_recipients} • sent {campaign.sent_count} • skipped {campaign.skipped_count}
+                    </p>
+                    <p className="mt-1 text-xs text-brand-slate">
+                      source {campaign.audience_source || 'all'} • {campaign.sent_at ? campaign.sent_at.slice(0, 19).replace('T', ' ') : campaign.created_at.slice(0, 19).replace('T', ' ')}
+                    </p>
+                  </div>
+                )) : (
+                  <p className="text-sm text-brand-slate">No campaigns yet.</p>
+                )}
+              </div>
+            </Card>
           </div>
         )}
       </div>
@@ -839,17 +972,6 @@ function PercentRow({ label, value }: { label: string; value: number }) {
       <div className="h-2 rounded-full bg-brand-sand">
         <div className="h-2 rounded-full bg-brand-teal" style={{ width: `${Math.max(0, Math.min(100, value))}%` }} />
       </div>
-    </div>
-  );
-}
-
-function SimpleList({ title, items }: { title: string; items: string[] }) {
-  return (
-    <div className="rounded-xl border border-brand-navy/10 bg-brand-sand/45 p-3">
-      <p className="text-sm font-semibold text-brand-navy">{title}</p>
-      <ul className="mt-2 space-y-1 text-sm text-brand-slate">
-        {items.length ? items.map((item) => <li key={item}>{item}</li>) : <li>No data in selected range.</li>}
-      </ul>
     </div>
   );
 }
