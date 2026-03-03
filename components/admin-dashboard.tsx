@@ -86,6 +86,15 @@ export function AdminDashboard({
   const [leadNoteMessage, setLeadNoteMessage] = useState<string | null>(null);
   const [leadNoteError, setLeadNoteError] = useState<string | null>(null);
   const [sendingLeadEmailType, setSendingLeadEmailType] = useState<'confirmation' | 'followup' | null>(null);
+  const [leadEmailMessage, setLeadEmailMessage] = useState<string | null>(null);
+  const [emailComposerOpen, setEmailComposerOpen] = useState(false);
+  const [emailComposerType, setEmailComposerType] = useState<'confirmation' | 'followup'>('confirmation');
+  const [emailComposerSubject, setEmailComposerSubject] = useState('');
+  const [emailComposerBody, setEmailComposerBody] = useState('');
+  const [emailComposerPreviewHtml, setEmailComposerPreviewHtml] = useState('');
+  const [emailComposerTab, setEmailComposerTab] = useState<'compose' | 'preview'>('compose');
+  const [emailComposerLoadingPreview, setEmailComposerLoadingPreview] = useState(false);
+  const [emailComposerSendAgain, setEmailComposerSendAgain] = useState(false);
   const [activityDays, setActivityDays] = useState<7 | 30 | 90>(30);
   const [activityData, setActivityData] = useState<ActivityData | null>(null);
   const [loadingActivity, setLoadingActivity] = useState(false);
@@ -303,6 +312,18 @@ export function AdminDashboard({
     return `${leads.length} leads shown`;
   }, [loadingLeads, leads.length]);
 
+  function defaultLeadEmailDraft(type: 'confirmation' | 'followup') {
+    const name = selectedLead?.contact_name?.trim() || 'there';
+    const requestType = selectedLead?.lead_type ? `${selectedLead.lead_type} request` : 'request';
+    const subject =
+      type === 'confirmation' ? `${requestType[0].toUpperCase()}${requestType.slice(1)} Received` : `Following up on your ${requestType}`;
+    const body =
+      type === 'confirmation'
+        ? `Hi ${name},\n\nThank you for reaching out to At Home Family Services. We received your request and will follow up shortly.\n\nIf you need immediate help, call us at (804) 919-3030.`
+        : `Hi ${name},\n\nJust checking in with next steps for your request. If you'd like to move forward, reply to this email or call (804) 919-3030 and we can help schedule what you need.`;
+    return { subject, body };
+  }
+
   async function saveAnnouncement(formData: FormData) {
     const payload = {
       id: String(formData.get('id') || ''),
@@ -416,26 +437,97 @@ export function AdminDashboard({
     }
   }
 
-  async function sendLeadEmail(type: 'confirmation' | 'followup', sendAgain = false) {
+  function openLeadEmailComposer(type: 'confirmation' | 'followup', sendAgain = false) {
+    const defaults = defaultLeadEmailDraft(type);
+    setEmailComposerType(type);
+    setEmailComposerSubject(defaults.subject);
+    setEmailComposerBody(defaults.body);
+    setEmailComposerSendAgain(sendAgain);
+    setEmailComposerPreviewHtml('');
+    setEmailComposerTab('compose');
+    setEmailComposerOpen(true);
+    setLeadError(null);
+    setLeadEmailMessage(null);
+  }
+
+  async function loadLeadEmailPreview() {
     const leadId = String(selectedLead?.id || '');
     if (!leadId) return;
-    setSendingLeadEmailType(type);
+    setEmailComposerLoadingPreview(true);
     setLeadError(null);
     try {
       const res = await fetch('/api/admin/send-lead-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ leadId, type, sendAgain })
+        body: JSON.stringify({
+          leadId,
+          type: emailComposerType,
+          subject: emailComposerSubject,
+          body: emailComposerBody,
+          preview: true,
+          sendAgain: emailComposerSendAgain
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load preview');
+      setEmailComposerPreviewHtml(String(data.html || ''));
+      setEmailComposerTab('preview');
+    } catch (error) {
+      setLeadError(error instanceof Error ? error.message : 'Failed to load preview');
+    } finally {
+      setEmailComposerLoadingPreview(false);
+    }
+  }
+
+  async function sendLeadEmailFromComposer() {
+    const leadId = String(selectedLead?.id || '');
+    if (!leadId) return;
+    setSendingLeadEmailType(emailComposerType);
+    setLeadError(null);
+    setLeadEmailMessage(null);
+    try {
+      const res = await fetch('/api/admin/send-lead-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadId,
+          type: emailComposerType,
+          subject: emailComposerSubject,
+          body: emailComposerBody,
+          sendAgain: emailComposerSendAgain
+        })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to send email');
-      await fetchLeads();
-      const refreshed = leads.find((item) => item.id === leadId);
-      if (refreshed) {
-        await openLead(refreshed);
-      }
+      const sentAt = new Date().toISOString();
+      setLeadEmailMessage('Message sent.');
+      setSelectedLead((prev) =>
+        prev
+          ? {
+              ...prev,
+              confirmation_sent_at: emailComposerType === 'confirmation' ? sentAt : prev.confirmation_sent_at,
+              followup_sent_at: emailComposerType === 'followup' ? sentAt : prev.followup_sent_at,
+              last_email_error: ''
+            }
+          : prev
+      );
+      setLeads((prev) =>
+        prev.map((lead) =>
+          lead.id === leadId
+            ? {
+                ...lead,
+                confirmation_sent_at: emailComposerType === 'confirmation' ? sentAt : lead.confirmation_sent_at,
+                followup_sent_at: emailComposerType === 'followup' ? sentAt : lead.followup_sent_at,
+                last_email_error: ''
+              }
+            : lead
+        )
+      );
+      setEmailComposerOpen(false);
     } catch (error) {
-      setLeadError(error instanceof Error ? error.message : 'Failed to send email');
+      const message = error instanceof Error ? error.message : 'Failed to send email';
+      setLeadError(message);
+      setSelectedLead((prev) => (prev ? { ...prev, last_email_error: message } : prev));
     } finally {
       setSendingLeadEmailType(null);
     }
@@ -664,28 +756,28 @@ export function AdminDashboard({
                   ) : null}
                   <div className="grid gap-2 sm:grid-cols-2">
                     <button
-                      onClick={() => void sendLeadEmail('confirmation')}
+                      onClick={() => openLeadEmailComposer('confirmation')}
                       disabled={sendingLeadEmailType !== null}
                       className="rounded-xl border border-brand-navy/10 bg-white px-3 py-2 text-sm font-medium disabled:opacity-60"
                     >
-                      {sendingLeadEmailType === 'confirmation' ? 'Sending confirmation...' : 'Send Confirmation'}
+                      Send Confirmation
                     </button>
                     <button
-                      onClick={() => void sendLeadEmail('followup')}
+                      onClick={() => openLeadEmailComposer('followup')}
                       disabled={sendingLeadEmailType !== null}
                       className="rounded-xl border border-brand-navy/10 bg-white px-3 py-2 text-sm font-medium disabled:opacity-60"
                     >
-                      {sendingLeadEmailType === 'followup' ? 'Sending follow-up...' : 'Send Follow-up'}
+                      Send Follow-up
                     </button>
                   </div>
+                  {leadEmailMessage ? <p className="text-xs text-emerald-700">{leadEmailMessage}</p> : null}
                   {(selectedLead.confirmation_sent_at || selectedLead.followup_sent_at) ? (
                     <div className="rounded-xl border border-brand-navy/10 bg-brand-sand/50 px-3 py-2 text-xs text-brand-slate">
                       Already sent before. To send again, click below and confirm.
                       <div className="mt-2 flex flex-wrap gap-2">
                         <button
                           onClick={() => {
-                            if (!window.confirm('Send confirmation again?')) return;
-                            void sendLeadEmail('confirmation', true);
+                            openLeadEmailComposer('confirmation', true);
                           }}
                           className="rounded-lg border px-2 py-1 text-xs"
                         >
@@ -693,8 +785,7 @@ export function AdminDashboard({
                         </button>
                         <button
                           onClick={() => {
-                            if (!window.confirm('Send follow-up again?')) return;
-                            void sendLeadEmail('followup', true);
+                            openLeadEmailComposer('followup', true);
                           }}
                           className="rounded-lg border px-2 py-1 text-xs"
                         >
@@ -743,9 +834,9 @@ export function AdminDashboard({
                     {loadingLeadNotes ? <p className="mt-2 text-xs text-brand-slate">Loading notes...</p> : null}
                     <div className="mt-2 space-y-2">
                       {(((selectedLead._notes as any[]) || [])).map((note) => (
-                        <div key={note.id} className="rounded-xl border border-brand-navy/10 bg-white p-3">
-                          <p>{note.note}</p>
-                          <p className="mt-1 text-xs text-brand-slate">{note.created_at}</p>
+                        <div key={note.id} className="max-w-full overflow-hidden rounded-xl border border-brand-navy/10 bg-white p-3">
+                          <p className="whitespace-pre-wrap break-words text-sm">{note.note}</p>
+                          <p className="mt-1 break-words text-xs text-brand-slate">{new Date(note.created_at).toLocaleString()}</p>
                         </div>
                       ))}
                       {!loadingLeadNotes && !((selectedLead._notes as any[]) || []).length ? (
@@ -1131,6 +1222,79 @@ export function AdminDashboard({
           </div>
         )}
       </div>
+
+      {emailComposerOpen && selectedLead ? (
+        <div className="fixed inset-0 z-50 bg-brand-navy/40 p-3 md:p-6">
+          <div className="mx-auto max-h-[95vh] w-full max-w-3xl overflow-hidden rounded-2xl border border-brand-navy/10 bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-brand-navy/10 px-4 py-3">
+              <p className="text-sm font-semibold text-brand-navy">
+                {emailComposerType === 'confirmation' ? 'Send Confirmation' : 'Send Follow-up'}
+              </p>
+              <button
+                onClick={() => setEmailComposerOpen(false)}
+                className="rounded-lg border border-brand-navy/10 px-2 py-1 text-xs text-brand-slate"
+              >
+                Close
+              </button>
+            </div>
+            <div className="flex items-center gap-2 border-b border-brand-navy/10 px-4 py-2">
+              <button
+                onClick={() => setEmailComposerTab('compose')}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium ${emailComposerTab === 'compose' ? 'bg-brand-navy text-white' : 'border border-brand-navy/10'}`}
+              >
+                Compose
+              </button>
+              <button
+                onClick={() => void loadLeadEmailPreview()}
+                disabled={emailComposerLoadingPreview}
+                className="rounded-lg border border-brand-navy/10 px-3 py-1.5 text-xs font-medium disabled:opacity-60"
+              >
+                {emailComposerLoadingPreview ? 'Loading preview...' : 'Preview'}
+              </button>
+            </div>
+            <div className="max-h-[calc(95vh-148px)] overflow-y-auto p-4">
+              {emailComposerTab === 'compose' ? (
+                <div className="space-y-3">
+                  <label className="block text-xs text-brand-slate">
+                    Subject
+                    <input
+                      value={emailComposerSubject}
+                      onChange={(event) => setEmailComposerSubject(event.target.value)}
+                      className="mt-1 w-full rounded-xl border border-brand-navy/10 px-3 py-2 text-sm"
+                    />
+                  </label>
+                  <label className="block text-xs text-brand-slate">
+                    Message body
+                    <textarea
+                      value={emailComposerBody}
+                      onChange={(event) => setEmailComposerBody(event.target.value)}
+                      className="mt-1 min-h-40 w-full rounded-xl border border-brand-navy/10 px-3 py-2 text-sm"
+                    />
+                  </label>
+                </div>
+              ) : (
+                <div className="rounded-xl border border-brand-navy/10">
+                  {emailComposerPreviewHtml ? (
+                    <iframe title="Email preview" srcDoc={emailComposerPreviewHtml} className="h-[560px] w-full max-w-full" />
+                  ) : (
+                    <p className="p-4 text-sm text-brand-slate">Preview is not available yet.</p>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="flex items-center justify-between gap-3 border-t border-brand-navy/10 px-4 py-3">
+              <p className="truncate text-xs text-brand-slate">To: {selectedLead.contact_email || 'No recipient email'}</p>
+              <button
+                onClick={() => void sendLeadEmailFromComposer()}
+                disabled={sendingLeadEmailType !== null || !emailComposerSubject.trim()}
+                className="rounded-xl bg-brand-navy px-3 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {sendingLeadEmailType ? 'Sending...' : 'Send message'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -330,6 +330,17 @@ export async function addLeadNote(leadId: string, note: string) {
   return mapLeadNote(data as CmsTables['lead_notes']['Row']);
 }
 
+export async function getLeadNotesByLeadId(leadId: string) {
+  const supabase = cmsServerClient();
+  const { data, error } = await supabase
+    .from('lead_notes')
+    .select('*')
+    .eq('lead_id', leadId)
+    .order('created_at', { ascending: false });
+  assertNoError(error);
+  return ((data as CmsTables['lead_notes']['Row'][] | null) || []).map(mapLeadNote);
+}
+
 export async function updateLeadNote(id: string, note: string) {
   const supabase = cmsServerClient();
   const { data, error } = await supabase.from('lead_notes').update({ note, updated_at: nowIso() }).eq('id', id).select('*').single();

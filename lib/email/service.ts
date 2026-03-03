@@ -17,6 +17,7 @@ import {
 import { createEmailToken } from '@/lib/email/tokens';
 import { sendResendEmail } from '@/lib/email/resend';
 import { renderLeadResponseEmail, renderMarketingEmail } from '@/lib/email/template';
+import { parseLeadMeta } from '@/lib/forms';
 
 function adminRecipient() {
   const value = process.env.RESEND_TO?.trim();
@@ -43,6 +44,108 @@ function uniqEmails(input: string[]) {
     result.push(email);
   }
   return result;
+}
+
+function parseLeadMessageForEmail(message?: string | null) {
+  const text = String(message || '');
+  const summaryPart = text.split('---meta---')[0]?.trim() || '';
+  const lines = summaryPart
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  const summaryMap = new Map<string, string>();
+  let additionalNotes = '';
+
+  for (const line of lines) {
+    const idx = line.indexOf(':');
+    if (idx <= 0) continue;
+    const label = line.slice(0, idx).trim();
+    const value = line.slice(idx + 1).trim();
+    if (!value) continue;
+    const lower = label.toLowerCase();
+    if (lower === 'notes' || lower === 'message') {
+      if (!additionalNotes) additionalNotes = value;
+      continue;
+    }
+    summaryMap.set(label, value);
+  }
+
+  if (!additionalNotes) {
+    const notesMatch = summaryPart.match(/(?:^|\n)Notes:\s*([\s\S]*)$/i);
+    if (notesMatch?.[1]) additionalNotes = notesMatch[1].trim().slice(0, 600);
+  }
+
+  return { summaryMap, additionalNotes };
+}
+
+function leadSummaryRows(lead: LocalLead) {
+  const { summaryMap, additionalNotes } = parseLeadMessageForEmail(lead.message);
+  const meta = parseLeadMeta(lead.message);
+  const city = typeof meta?.city === 'string' ? meta.city : '';
+  const region = typeof meta?.region === 'string' ? meta.region : '';
+  const location = [city, region].filter(Boolean).join(', ');
+
+  const rows = [
+    { label: 'Name', value: lead.contact_name || '' },
+    { label: 'Email', value: lead.contact_email || '' },
+    { label: 'Phone', value: lead.contact_phone || '' },
+    { label: 'Request Type', value: leadTypeLabel(lead.lead_type) },
+    { label: 'Location', value: location || '' },
+    { label: 'Timeframe', value: summaryMap.get('Timeframe') || summaryMap.get('Move-in timeframe') || '' },
+    { label: 'Preferred Contact', value: summaryMap.get('Preferred contact') || '' },
+    { label: 'Submitted', value: lead.created_at || '' },
+    { label: 'Additional notes', value: additionalNotes }
+  ];
+
+  return rows.filter((row) => row.value.trim());
+}
+
+export async function buildLeadDetailEmailDraft(input: {
+  leadId: string;
+  type: 'confirmation' | 'followup';
+  subjectOverride?: string;
+  bodyOverride?: string;
+  sendAgain?: boolean;
+}) {
+  const lead = await getLocalLeadById(input.leadId);
+  if (!lead) throw new Error('Lead not found');
+  if (!lead.contact_email) throw new Error('Lead does not have an email address');
+
+  if (!input.sendAgain) {
+    if (input.type === 'confirmation' && lead.confirmation_sent_at) {
+      throw new Error('Confirmation was already sent for this lead');
+    }
+    if (input.type === 'followup' && lead.followup_sent_at) {
+      throw new Error('Follow-up was already sent for this lead');
+    }
+  }
+
+  const subscriber = await getSubscriberByEmail(lead.contact_email);
+  if (subscriber && subscriber.status !== 'active') {
+    throw new Error('Email blocked — this contact is unsubscribed or suppressed');
+  }
+
+  const defaultSubject =
+    input.type === 'confirmation'
+      ? `${leadTypeLabel(lead.lead_type)} Received`
+      : `Following up on your ${leadTypeLabel(lead.lead_type)}`;
+  const defaultIntro =
+    input.type === 'confirmation'
+      ? 'Thank you for reaching out. We received your request and will follow up shortly.'
+      : 'We wanted to follow up and help you with next steps. Reply to this email or call us anytime.';
+
+  const subject = input.subjectOverride?.trim() || defaultSubject;
+  const body = input.bodyOverride?.trim() || '';
+  const html = renderLeadResponseEmail({
+    title: subject,
+    intro: defaultIntro,
+    body,
+    summary: leadSummaryRows(lead),
+    unsubscribeUrl: unsubscribeUrl(lead.contact_email),
+    replyToEmail: replyToRecipient()
+  });
+
+  return { lead, subject, html };
 }
 
 export async function sendTestBlastEmail(input: { subject: string; previewText?: string; body: string }) {
@@ -121,31 +224,21 @@ function leadTypeLabel(leadType?: string) {
   return 'Contact Form';
 }
 
-function transactionalHtml(title: string, body: string) {
-  return `<div style="font-family:Arial,sans-serif;background:#f5f1ea;padding:20px;color:#0f2d45;">
-    <div style="max-width:640px;margin:0 auto;background:#fff;border:1px solid #d9e3e8;border-radius:12px;padding:20px;">
-      <h1 style="margin:0 0 12px;font-size:22px;">${title}</h1>
-      <p style="margin:0;line-height:1.6;white-space:pre-wrap;">${body}</p>
-    </div>
-  </div>`;
-}
-
 export async function sendLeadTransactionalEmails(lead: LocalLead) {
   const adminTo = adminRecipient();
   const typeLabel = leadTypeLabel(lead.lead_type);
-  const summary = [
-    `Type: ${typeLabel}`,
-    `Name: ${lead.contact_name || 'N/A'}`,
-    `Email: ${lead.contact_email || 'N/A'}`,
-    `Phone: ${lead.contact_phone || 'N/A'}`,
-    `Page: ${lead.page_path || 'N/A'}`,
-    `Message:\n${lead.message || ''}`
-  ].join('\n');
+  const summary = leadSummaryRows(lead);
 
   await sendResendEmail({
     to: adminTo,
     subject: `New ${typeLabel} submission`,
-    html: transactionalHtml(`New ${typeLabel} submission`, summary),
+    html: renderLeadResponseEmail({
+      title: `New ${typeLabel} submission`,
+      intro: 'A new request was submitted on the website.',
+      summary,
+      unsubscribeUrl: unsubscribeUrl(adminTo),
+      replyToEmail: replyToRecipient()
+    }),
     replyTo: replyToRecipient()
   });
   await logEmailEvent({ email: adminTo, type: 'sent', meta: { kind: 'lead_admin_notification', lead_id: lead.id } });
@@ -153,18 +246,14 @@ export async function sendLeadTransactionalEmails(lead: LocalLead) {
   if (!lead.contact_email) return;
 
   const subscriber = await getSubscriberByEmail(lead.contact_email);
-  const userBody = [
-    `Hi ${lead.contact_name || ''},`,
-    '',
-    'Thanks for contacting At Home Family Services, LLC.',
-    'We received your request and will follow up soon.',
-    '',
-    'If you need immediate help, call us at (804) 919-3030.',
-    '',
-    `Marketing email preferences: ${unsubscribeUrl(lead.contact_email)}`
-  ].join('\n');
-
-  const html = transactionalHtml('We received your request', userBody);
+  const html = renderLeadResponseEmail({
+    title: 'We received your request',
+    intro: 'Thank you for contacting At Home Family Services, LLC. We received your request and will follow up soon.',
+    body: 'If you need immediate help, call us at (804) 919-3030.',
+    summary,
+    unsubscribeUrl: unsubscribeUrl(lead.contact_email),
+    replyToEmail: replyToRecipient()
+  });
   await sendResendEmail({ to: lead.contact_email, subject: 'We received your request', html });
   await logEmailEvent({
     email: lead.contact_email,
@@ -180,55 +269,18 @@ export async function sendLeadTransactionalEmails(lead: LocalLead) {
 export async function sendLeadDetailEmail(input: {
   leadId: string;
   type: 'confirmation' | 'followup';
+  subjectOverride?: string;
+  bodyOverride?: string;
   sendAgain?: boolean;
 }) {
-  const lead = await getLocalLeadById(input.leadId);
-  if (!lead) throw new Error('Lead not found');
-  if (!lead.contact_email) throw new Error('Lead does not have an email address');
-
-  if (!input.sendAgain) {
-    if (input.type === 'confirmation' && lead.confirmation_sent_at) {
-      throw new Error('Confirmation was already sent for this lead');
-    }
-    if (input.type === 'followup' && lead.followup_sent_at) {
-      throw new Error('Follow-up was already sent for this lead');
-    }
-  }
-
-  const subscriber = await getSubscriberByEmail(lead.contact_email);
-  if (subscriber && subscriber.status !== 'active') {
-    throw new Error('Email blocked — this contact is unsubscribed or suppressed');
-  }
-
-  const subject =
-    input.type === 'confirmation'
-      ? `${leadTypeLabel(lead.lead_type)} Received`
-      : `Following up on your ${leadTypeLabel(lead.lead_type)}`;
-  const intro =
-    input.type === 'confirmation'
-      ? 'Thank you for reaching out. We received your request and will follow up shortly.'
-      : 'We wanted to follow up and help you with next steps. Reply to this email or call us anytime.';
-
-  const html = renderLeadResponseEmail({
-    title: subject,
-    intro,
-    summary: [
-      { label: 'Name', value: lead.contact_name || '' },
-      { label: 'Email', value: lead.contact_email || '' },
-      { label: 'Phone', value: lead.contact_phone || '' },
-      { label: 'Request Type', value: leadTypeLabel(lead.lead_type) },
-      { label: 'Submitted', value: lead.created_at || '' },
-      { label: 'Notes', value: (lead.message || '').slice(0, 400) }
-    ],
-    unsubscribeUrl: unsubscribeUrl(lead.contact_email),
-    replyToEmail: replyToRecipient()
-  });
+  const draft = await buildLeadDetailEmailDraft(input);
+  const lead = draft.lead;
 
   try {
     const resend = await sendResendEmail({
       to: lead.contact_email,
-      subject,
-      html,
+      subject: draft.subject,
+      html: draft.html,
       replyTo: replyToRecipient()
     });
     await markLeadEmailSent(lead.id, input.type);

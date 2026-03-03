@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireAdminApi } from '@/lib/api-auth';
-import { sendLeadDetailEmail } from '@/lib/email/service';
+import { buildLeadDetailEmailDraft, sendLeadDetailEmail } from '@/lib/email/service';
 import {
   getMissingResendEnvVars,
   normalizeResendFrom,
@@ -24,6 +24,9 @@ export async function POST(req: Request) {
     const body = (await req.json()) as {
       leadId?: string;
       type?: 'confirmation' | 'followup';
+      subject?: string;
+      body?: string;
+      preview?: boolean;
       sendAgain?: boolean;
     };
 
@@ -31,7 +34,7 @@ export async function POST(req: Request) {
     const type = body.type;
     console.info('admin.send_lead_email.request', {
       requestId,
-      payload: { leadId, type, sendAgain: body.sendAgain === true }
+      payload: { leadId, type, preview: body.preview === true, sendAgain: body.sendAgain === true }
     });
 
     if (!leadId || (type !== 'confirmation' && type !== 'followup')) {
@@ -53,9 +56,22 @@ export async function POST(req: Request) {
       resendFrom: normalizeResendFrom(resolvedFrom)
     });
 
+    if (body.preview === true) {
+      const draft = await buildLeadDetailEmailDraft({
+        leadId,
+        type,
+        subjectOverride: typeof body.subject === 'string' ? body.subject : undefined,
+        bodyOverride: typeof body.body === 'string' ? body.body : undefined,
+        sendAgain: body.sendAgain === true
+      });
+      return NextResponse.json({ ok: true, subject: draft.subject, html: draft.html });
+    }
+
     const result = await sendLeadDetailEmail({
       leadId,
       type,
+      subjectOverride: typeof body.subject === 'string' ? body.subject : undefined,
+      bodyOverride: typeof body.body === 'string' ? body.body : undefined,
       sendAgain: body.sendAgain === true
     });
 

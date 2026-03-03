@@ -1,13 +1,23 @@
 import { NextResponse } from 'next/server';
 import { requireAdminApi } from '@/lib/api-auth';
-import { addLeadNote, dbGet, deleteLeadNote, updateLeadNote } from '@/lib/storage';
+import { addLeadNote, dbGet, deleteLeadNote, getLeadNotesByLeadId, updateLeadNote } from '@/lib/storage';
 
 export async function GET(req: Request) {
   const unauthorized = await requireAdminApi();
   if (unauthorized) return unauthorized;
-  const leadId = new URL(req.url).searchParams.get('leadId');
-  const notes = await dbGet('leadNotes');
-  return NextResponse.json(leadId ? notes.filter((n) => n.leadId === leadId) : notes);
+  try {
+    const leadId = new URL(req.url).searchParams.get('leadId');
+    if (leadId) {
+      const notes = await getLeadNotesByLeadId(leadId);
+      return NextResponse.json(notes);
+    }
+    const notes = await dbGet('leadNotes');
+    return NextResponse.json(notes);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to load notes';
+    console.error('admin.lead_notes.list.error', { message });
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function POST(req: Request) {
