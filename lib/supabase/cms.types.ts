@@ -138,6 +138,9 @@ export type Database = {
           forwarded_to_leadops: boolean;
           leadops_forwarded_at: string | null;
           leadops_error: string | null;
+          confirmation_sent_at: string | null;
+          followup_sent_at: string | null;
+          last_email_error: string | null;
         };
         Insert: Partial<Database['athome_family_services_llc']['Tables']['leads']['Row']>;
         Update: Partial<Database['athome_family_services_llc']['Tables']['leads']['Row']>;

@@ -13,10 +13,21 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
   const unauthorized = await requireAdminApi();
   if (unauthorized) return unauthorized;
-  const body = await req.json();
-  if (!body.leadId || !body.note) return NextResponse.json({ error: 'leadId and note required' }, { status: 400 });
-  const item = await addLeadNote(String(body.leadId), String(body.note));
-  return NextResponse.json(item);
+  try {
+    const body = (await req.json()) as Record<string, unknown>;
+    const leadId = String(body.leadId || body.lead_id || '').trim();
+    const note = String(body.note || '').trim();
+    if (!leadId || !note) {
+      return NextResponse.json({ error: 'leadId (or lead_id) and note are required' }, { status: 400 });
+    }
+    const item = await addLeadNote(leadId, note);
+    console.info('admin.lead_notes.create.success', { leadId, noteLength: note.length });
+    return NextResponse.json(item);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to save note';
+    console.error('admin.lead_notes.create.error', { message });
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }
 
 export async function PATCH(req: Request) {

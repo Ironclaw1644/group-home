@@ -60,6 +60,9 @@ export type LocalLead = {
   forwarded_to_leadops: boolean;
   leadops_forwarded_at?: string;
   leadops_error?: string;
+  confirmation_sent_at?: string;
+  followup_sent_at?: string;
+  last_email_error?: string;
   notes_count?: number;
 };
 

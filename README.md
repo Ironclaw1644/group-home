@@ -70,6 +70,7 @@ Copy `.env.example` and set:
 - `RESEND_API_KEY`
 - `RESEND_FROM`
 - `RESEND_TO`
+- `RESEND_REPLY_TO`
 - `RESEND_WEBHOOK_SECRET`
 - `EMAIL_TOKEN_SECRET`
 - `CMS_SUPABASE_URL`
@@ -145,6 +146,7 @@ Set the following in Vercel:
 - `RESEND_API_KEY`
 - `RESEND_FROM` (example: `At Home Family Services <updates@athomefamilyservices.com>`)
 - `RESEND_TO` (owner/admin notification address)
+- `RESEND_REPLY_TO` (reply inbox shown on admin-sent lead emails)
 - `RESEND_WEBHOOK_SECRET` (shared secret for webhook verification)
 - `EMAIL_TOKEN_SECRET` (for signed unsubscribe links)
 

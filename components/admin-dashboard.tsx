@@ -75,12 +75,17 @@ export function AdminDashboard({
   const [q, setQ] = useState('');
   const [leadTypeFilter, setLeadTypeFilter] = useState('');
   const [mobileLeadFiltersOpen, setMobileLeadFiltersOpen] = useState(false);
+  const [mobileLeadView, setMobileLeadView] = useState<'list' | 'detail'>('list');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [pageSize] = useState(20);
   const [announcements, setAnnouncements] = useState(initial.announcements);
   const [subscribers, setSubscribers] = useState(initial.subscribers);
   const [leadNoteDraft, setLeadNoteDraft] = useState('');
+  const [loadingLeadNotes, setLoadingLeadNotes] = useState(false);
+  const [leadNoteMessage, setLeadNoteMessage] = useState<string | null>(null);
+  const [leadNoteError, setLeadNoteError] = useState<string | null>(null);
+  const [sendingLeadEmailType, setSendingLeadEmailType] = useState<'confirmation' | 'followup' | null>(null);
   const [activityDays, setActivityDays] = useState<7 | 30 | 90>(30);
   const [activityData, setActivityData] = useState<ActivityData | null>(null);
   const [loadingActivity, setLoadingActivity] = useState(false);
@@ -95,6 +100,14 @@ export function AdminDashboard({
   const [testingCampaign, setTestingCampaign] = useState(false);
   const [emailMessage, setEmailMessage] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [emailSettings, setEmailSettings] = useState<{
+    resendApiKeyPresent: boolean;
+    resendFromPresent: boolean;
+    resendFromValid: boolean;
+    resendToPresent: boolean;
+    resendReplyToPresent: boolean;
+  } | null>(null);
+  const [sendingAdminTestEmail, setSendingAdminTestEmail] = useState(false);
 
   async function fetchLeads() {
     setLoadingLeads(true);
@@ -160,6 +173,21 @@ export function AdminDashboard({
     }
   }
 
+  async function fetchEmailSettings() {
+    try {
+      const res = await fetch('/api/admin/email-settings');
+      if (res.status === 401) {
+        window.location.href = '/admin/login';
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load email settings');
+      setEmailSettings(data);
+    } catch (error) {
+      setEmailError(error instanceof Error ? error.message : 'Failed to load email settings');
+    }
+  }
+
   async function sendTestEmail() {
     setTestingCampaign(true);
     setEmailError(null);
@@ -214,6 +242,22 @@ export function AdminDashboard({
     }
   }
 
+  async function sendAdminTestEmail() {
+    setSendingAdminTestEmail(true);
+    setEmailError(null);
+    setEmailMessage(null);
+    try {
+      const res = await fetch('/api/admin/send-test-email', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send test email');
+      setEmailMessage('Test email sent to admin recipient.');
+    } catch (error) {
+      setEmailError(error instanceof Error ? error.message : 'Failed to send test email');
+    } finally {
+      setSendingAdminTestEmail(false);
+    }
+  }
+
   async function setSubscriberStatus(id: string, nextStatus: 'active' | 'unsubscribed' | 'bounced' | 'complaint', forceResubscribe = false) {
     try {
       const res = await fetch('/api/admin/subscribers', {
@@ -234,6 +278,16 @@ export function AdminDashboard({
   }, [status, q, page, pageSize, leadTypeFilter]);
 
   useEffect(() => {
+    if (typeof window === 'undefined' || !leads.length) return;
+    const leadId = new URL(window.location.href).searchParams.get('leadId');
+    if (!leadId) return;
+    const match = leads.find((item) => String(item.id || '') === leadId);
+    if (match && String(selectedLead?.id || '') !== String(match.id || '')) {
+      void openLead(match);
+    }
+  }, [leads]);
+
+  useEffect(() => {
     if (tab !== 'activity') return;
     fetchActivity(activityDays);
   }, [tab, activityDays]);
@@ -241,6 +295,7 @@ export function AdminDashboard({
   useEffect(() => {
     if (tab !== 'email') return;
     fetchCampaigns();
+    fetchEmailSettings();
   }, [tab]);
 
   const leadCountLabel = useMemo(() => {
@@ -295,6 +350,8 @@ export function AdminDashboard({
   async function addNote() {
     const leadId = String(selectedLead?.id || '');
     if (!leadId || !leadNoteDraft.trim()) return;
+    setLeadNoteMessage(null);
+    setLeadNoteError(null);
     const res = await fetch('/api/admin/lead-notes', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -309,6 +366,36 @@ export function AdminDashboard({
         )
       );
       setLeadNoteDraft('');
+      setLeadNoteMessage('Note saved.');
+    } else {
+      setLeadNoteError(item?.error || 'Failed to save note');
+    }
+  }
+
+  async function openLead(lead: LeadRecord) {
+    setSelectedLead(lead);
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('leadId', String(lead.id || ''));
+      window.history.replaceState({}, '', url.toString());
+      if (window.innerWidth < 768) setMobileLeadView('detail');
+    }
+    setLoadingLeadNotes(true);
+    try {
+      const res = await fetch(`/api/admin/lead-notes?leadId=${encodeURIComponent(String(lead.id || ''))}`);
+      if (res.status === 401) {
+        window.location.href = '/admin/login';
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load lead notes');
+      const notes = Array.isArray(data) ? data : [];
+      setSelectedLead((prev) => (prev && prev.id === lead.id ? { ...prev, _notes: notes } : prev));
+      setLeads((prev) => prev.map((item) => (item.id === lead.id ? { ...item, _notes: notes } : item)));
+    } catch (error) {
+      setLeadError(error instanceof Error ? error.message : 'Failed to load lead notes');
+    } finally {
+      setLoadingLeadNotes(false);
     }
   }
 
@@ -326,6 +413,31 @@ export function AdminDashboard({
     if (data.row) {
       setLeads((prev) => prev.map((lead) => (lead.id === id ? { ...lead, ...data.row } : lead)));
       setSelectedLead((prev) => (prev && prev.id === id ? { ...prev, ...data.row } : prev));
+    }
+  }
+
+  async function sendLeadEmail(type: 'confirmation' | 'followup', sendAgain = false) {
+    const leadId = String(selectedLead?.id || '');
+    if (!leadId) return;
+    setSendingLeadEmailType(type);
+    setLeadError(null);
+    try {
+      const res = await fetch('/api/admin/send-lead-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId, type, sendAgain })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send email');
+      await fetchLeads();
+      const refreshed = leads.find((item) => item.id === leadId);
+      if (refreshed) {
+        await openLead(refreshed);
+      }
+    } catch (error) {
+      setLeadError(error instanceof Error ? error.message : 'Failed to send email');
+    } finally {
+      setSendingLeadEmailType(null);
     }
   }
 
@@ -391,7 +503,7 @@ export function AdminDashboard({
       <div className="w-full max-w-full overflow-x-hidden">
         {tab === 'leads' && (
           <div className="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
-            <Card>
+            <Card className={mobileLeadView === 'detail' ? 'hidden md:block' : ''}>
               <div className="mb-3 flex items-center justify-between gap-2 md:hidden">
                 <button
                   onClick={() => setMobileLeadFiltersOpen((prev) => !prev)}
@@ -449,7 +561,7 @@ export function AdminDashboard({
                   return (
                     <button
                       key={lead.id}
-                      onClick={() => setSelectedLead(lead)}
+                      onClick={() => void openLead(lead)}
                       className="w-full rounded-2xl border border-brand-navy/10 bg-white p-4 text-left"
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -457,7 +569,7 @@ export function AdminDashboard({
                           <p className="font-semibold text-brand-navy">{lead.contact_name || 'Unknown'}</p>
                           <p className="break-all text-xs text-brand-slate">{lead.contact_email || ''}</p>
                         </div>
-                        <Badge>{lead.forwarded_to_leadops ? 'Forwarded' : 'Not forwarded'}</Badge>
+                        <Badge>{lead.forwarded_to_leadops ? 'Forwarded to CRM' : 'CRM pending'}</Badge>
                       </div>
                       <p className="mt-2 text-xs text-brand-slate">
                         {lead.lead_type || 'unknown'} • {lead.status || 'new'} • notes {lead.notes_count || 0}
@@ -475,7 +587,7 @@ export function AdminDashboard({
                       <th className="px-2 py-2">Contact</th>
                       <th className="px-2 py-2">Type</th>
                       <th className="px-2 py-2">Status</th>
-                      <th className="px-2 py-2">Forwarded</th>
+                      <th className="px-2 py-2">CRM</th>
                       <th className="px-2 py-2">Notes</th>
                       <th className="px-2 py-2">Action</th>
                     </tr>
@@ -493,10 +605,10 @@ export function AdminDashboard({
                           </td>
                           <td className="px-2 py-2">{lead.lead_type || ''}</td>
                           <td className="px-2 py-2">{lead.status || ''}</td>
-                          <td className="px-2 py-2">{lead.forwarded_to_leadops ? 'yes' : 'no'}</td>
+                          <td className="px-2 py-2">{lead.forwarded_to_leadops ? 'forwarded' : 'pending'}</td>
                           <td className="px-2 py-2">{lead.notes_count || 0}</td>
                           <td className="px-2 py-2">
-                            <button onClick={() => setSelectedLead(lead)} className="text-brand-teal">
+                            <button onClick={() => void openLead(lead)} className="text-brand-teal">
                               View
                             </button>
                           </td>
@@ -508,26 +620,88 @@ export function AdminDashboard({
               </div>
             </Card>
 
-            <Card>
+            <Card className={`${mobileLeadView === 'list' ? 'hidden md:block' : ''} max-w-full overflow-x-hidden`}>
+              <div className="mb-3 md:hidden">
+                <button
+                  onClick={() => {
+                    setMobileLeadView('list');
+                    if (typeof window !== 'undefined') {
+                      const url = new URL(window.location.href);
+                      url.searchParams.delete('leadId');
+                      window.history.replaceState({}, '', url.toString());
+                    }
+                  }}
+                  className="rounded-xl border border-brand-navy/10 bg-white px-3 py-2 text-sm font-medium"
+                >
+                  Back to Leads
+                </button>
+              </div>
               <h2 className="text-lg font-semibold text-brand-navy">Lead Detail</h2>
               {!selectedLead ? (
                 <p className="mt-3 text-sm text-brand-slate">Select a lead to view details and local notes.</p>
               ) : (
                 <div className="mt-3 space-y-4 text-sm">
-                  <div className="grid gap-2">
+                  <div className="grid max-w-full gap-2">
                     <DetailRow label="Name" value={selectedLead.contact_name} />
                     <DetailRow label="Email" value={selectedLead.contact_email} />
                     <DetailRow label="Phone" value={selectedLead.contact_phone} />
                     <DetailRow label="Lead Type" value={selectedLead.lead_type} />
                     <DetailRow label="Status" value={selectedLead.status} />
-                    <DetailRow label="Forwarded to LeadOps" value={selectedLead.forwarded_to_leadops ? 'yes' : 'no'} />
-                    <DetailRow label="LeadOps Error" value={selectedLead.leadops_error || ''} />
+                    <DetailRow label="Forwarded to CRM" value={selectedLead.forwarded_to_leadops ? 'Yes' : 'No'} />
+                    <DetailRow label="Confirmation Email Sent" value={selectedLead.confirmation_sent_at || 'No'} />
+                    <DetailRow label="Follow-up Email Sent" value={selectedLead.followup_sent_at || 'No'} />
+                    <DetailRow label="Last Email Error" value={selectedLead.last_email_error || 'None'} />
                     <DetailRow label="Created" value={selectedLead.created_at || ''} />
                   </div>
                   {selectedLead.leadops_error ? (
-                    <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700">
-                      LeadOps forward error: {selectedLead.leadops_error}
-                    </p>
+                    <div className="max-w-full overflow-hidden rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-medium text-rose-700">
+                      <p className="break-words">Forwarding failed — check system settings.</p>
+                      <details className="mt-1">
+                        <summary className="cursor-pointer text-[11px]">Details</summary>
+                        <p className="mt-1 break-words text-[11px]">{selectedLead.leadops_error}</p>
+                      </details>
+                    </div>
+                  ) : null}
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <button
+                      onClick={() => void sendLeadEmail('confirmation')}
+                      disabled={sendingLeadEmailType !== null}
+                      className="rounded-xl border border-brand-navy/10 bg-white px-3 py-2 text-sm font-medium disabled:opacity-60"
+                    >
+                      {sendingLeadEmailType === 'confirmation' ? 'Sending confirmation...' : 'Send Confirmation'}
+                    </button>
+                    <button
+                      onClick={() => void sendLeadEmail('followup')}
+                      disabled={sendingLeadEmailType !== null}
+                      className="rounded-xl border border-brand-navy/10 bg-white px-3 py-2 text-sm font-medium disabled:opacity-60"
+                    >
+                      {sendingLeadEmailType === 'followup' ? 'Sending follow-up...' : 'Send Follow-up'}
+                    </button>
+                  </div>
+                  {(selectedLead.confirmation_sent_at || selectedLead.followup_sent_at) ? (
+                    <div className="rounded-xl border border-brand-navy/10 bg-brand-sand/50 px-3 py-2 text-xs text-brand-slate">
+                      Already sent before. To send again, click below and confirm.
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        <button
+                          onClick={() => {
+                            if (!window.confirm('Send confirmation again?')) return;
+                            void sendLeadEmail('confirmation', true);
+                          }}
+                          className="rounded-lg border px-2 py-1 text-xs"
+                        >
+                          Send Confirmation Again
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (!window.confirm('Send follow-up again?')) return;
+                            void sendLeadEmail('followup', true);
+                          }}
+                          className="rounded-lg border px-2 py-1 text-xs"
+                        >
+                          Send Follow-up Again
+                        </button>
+                      </div>
+                    </div>
                   ) : null}
                   <div className="grid gap-3 sm:grid-cols-2">
                     <label className="text-xs text-brand-slate">
@@ -560,12 +734,13 @@ export function AdminDashboard({
                   </div>
                   <div>
                     <p className="font-semibold text-brand-navy">Message</p>
-                    <pre className="mt-2 max-h-56 overflow-auto whitespace-pre-wrap rounded-xl bg-brand-sand p-3 text-xs text-brand-navy">
+                    <pre className="mt-2 max-h-56 max-w-full overflow-x-auto overflow-y-auto whitespace-pre-wrap break-words rounded-xl bg-brand-sand p-3 text-xs text-brand-navy">
                       {String(selectedLead.message || '')}
                     </pre>
                   </div>
                   <div>
                     <p className="font-semibold text-brand-navy">Notes</p>
+                    {loadingLeadNotes ? <p className="mt-2 text-xs text-brand-slate">Loading notes...</p> : null}
                     <div className="mt-2 space-y-2">
                       {(((selectedLead._notes as any[]) || [])).map((note) => (
                         <div key={note.id} className="rounded-xl border border-brand-navy/10 bg-white p-3">
@@ -573,7 +748,7 @@ export function AdminDashboard({
                           <p className="mt-1 text-xs text-brand-slate">{note.created_at}</p>
                         </div>
                       ))}
-                      {!((selectedLead._notes as any[]) || []).length ? (
+                      {!loadingLeadNotes && !((selectedLead._notes as any[]) || []).length ? (
                         <p className="text-xs text-brand-slate">No notes yet.</p>
                       ) : null}
                     </div>
@@ -583,6 +758,8 @@ export function AdminDashboard({
                       placeholder="Add local note"
                       className="mt-3 min-h-24 w-full rounded-xl border border-brand-navy/10 px-3 py-2"
                     />
+                    {leadNoteMessage ? <p className="mt-2 text-xs text-emerald-700">{leadNoteMessage}</p> : null}
+                    {leadNoteError ? <p className="mt-2 text-xs text-rose-700">{leadNoteError}</p> : null}
                     <button onClick={addNote} className="mt-2 rounded-xl bg-brand-teal px-3 py-2 text-sm font-semibold text-white">
                       Save Note
                     </button>
@@ -864,6 +1041,20 @@ export function AdminDashboard({
             <Card>
               <h2 className="text-lg font-semibold text-brand-navy">Email Blasts</h2>
               <p className="mt-1 text-sm text-brand-slate">Send updates to active subscribers only. Unsubscribed and bounced emails are skipped.</p>
+              <div className="mt-3 rounded-xl border border-brand-navy/10 bg-brand-sand/40 p-3 text-xs text-brand-slate">
+                <p className="font-semibold text-brand-navy">System settings check</p>
+                <p>RESEND_API_KEY: {emailSettings?.resendApiKeyPresent ? 'present' : 'missing'}</p>
+                <p>RESEND_FROM: {emailSettings?.resendFromPresent ? 'present' : 'missing'}{emailSettings && !emailSettings.resendFromValid ? ' (invalid format)' : ''}</p>
+                <p>RESEND_TO: {emailSettings?.resendToPresent ? 'present' : 'missing'}</p>
+                <p>RESEND_REPLY_TO: {emailSettings?.resendReplyToPresent ? 'present' : 'missing'}</p>
+                <button
+                  onClick={sendAdminTestEmail}
+                  disabled={sendingAdminTestEmail}
+                  className="mt-2 rounded-lg border border-brand-navy/10 bg-white px-2 py-1 text-xs font-medium disabled:opacity-60"
+                >
+                  {sendingAdminTestEmail ? 'Sending test...' : 'Send test email to admin'}
+                </button>
+              </div>
               <div className="mt-4 space-y-3">
                 <input
                   value={emailSubject}
@@ -948,7 +1139,7 @@ function DetailRow({ label, value }: { label: string; value: unknown }) {
   return (
     <p>
       <span className="font-semibold text-brand-navy">{label}:</span>{' '}
-      <span className="break-all text-brand-slate">{String(value || '')}</span>
+      <span className="max-w-full break-words text-brand-slate">{String(value || '')}</span>
     </p>
   );
 }

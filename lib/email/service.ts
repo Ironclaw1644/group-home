@@ -5,20 +5,27 @@ import type { LocalLead } from '@/lib/types';
 import {
   createEmailCampaign,
   finalizeEmailCampaign,
+  getLocalLeadById,
   getEmailCampaignByIdempotencyKey,
   getSubscriberByEmail,
   listSubscribersForBlast,
   logEmailEvent,
+  markLeadEmailError,
+  markLeadEmailSent,
   recordEmailCampaignRecipient,
 } from '@/lib/storage';
 import { createEmailToken } from '@/lib/email/tokens';
 import { sendResendEmail } from '@/lib/email/resend';
-import { renderMarketingEmail } from '@/lib/email/template';
+import { renderLeadResponseEmail, renderMarketingEmail } from '@/lib/email/template';
 
 function adminRecipient() {
   const value = process.env.RESEND_TO?.trim();
   if (!value) throw new Error('RESEND_TO is required');
   return value;
+}
+
+function replyToRecipient() {
+  return process.env.RESEND_REPLY_TO?.trim() || 'Athomefamilyservice@yahoo.com';
 }
 
 function unsubscribeUrl(email: string) {
@@ -138,7 +145,8 @@ export async function sendLeadTransactionalEmails(lead: LocalLead) {
   await sendResendEmail({
     to: adminTo,
     subject: `New ${typeLabel} submission`,
-    html: transactionalHtml(`New ${typeLabel} submission`, summary)
+    html: transactionalHtml(`New ${typeLabel} submission`, summary),
+    replyTo: replyToRecipient()
   });
   await logEmailEvent({ email: adminTo, type: 'sent', meta: { kind: 'lead_admin_notification', lead_id: lead.id } });
 
@@ -167,4 +175,72 @@ export async function sendLeadTransactionalEmails(lead: LocalLead) {
       subscriber_status: subscriber?.status || 'none'
     }
   });
+}
+
+export async function sendLeadDetailEmail(input: {
+  leadId: string;
+  type: 'confirmation' | 'followup';
+  sendAgain?: boolean;
+}) {
+  const lead = await getLocalLeadById(input.leadId);
+  if (!lead) throw new Error('Lead not found');
+  if (!lead.contact_email) throw new Error('Lead does not have an email address');
+
+  if (!input.sendAgain) {
+    if (input.type === 'confirmation' && lead.confirmation_sent_at) {
+      throw new Error('Confirmation was already sent for this lead');
+    }
+    if (input.type === 'followup' && lead.followup_sent_at) {
+      throw new Error('Follow-up was already sent for this lead');
+    }
+  }
+
+  const subscriber = await getSubscriberByEmail(lead.contact_email);
+  if (subscriber && subscriber.status !== 'active') {
+    throw new Error('Email blocked — this contact is unsubscribed or suppressed');
+  }
+
+  const subject =
+    input.type === 'confirmation'
+      ? `${leadTypeLabel(lead.lead_type)} Received`
+      : `Following up on your ${leadTypeLabel(lead.lead_type)}`;
+  const intro =
+    input.type === 'confirmation'
+      ? 'Thank you for reaching out. We received your request and will follow up shortly.'
+      : 'We wanted to follow up and help you with next steps. Reply to this email or call us anytime.';
+
+  const html = renderLeadResponseEmail({
+    title: subject,
+    intro,
+    summary: [
+      { label: 'Name', value: lead.contact_name || '' },
+      { label: 'Email', value: lead.contact_email || '' },
+      { label: 'Phone', value: lead.contact_phone || '' },
+      { label: 'Request Type', value: leadTypeLabel(lead.lead_type) },
+      { label: 'Submitted', value: lead.created_at || '' },
+      { label: 'Notes', value: (lead.message || '').slice(0, 400) }
+    ],
+    unsubscribeUrl: unsubscribeUrl(lead.contact_email),
+    replyToEmail: replyToRecipient()
+  });
+
+  try {
+    const resend = await sendResendEmail({
+      to: lead.contact_email,
+      subject,
+      html,
+      replyTo: replyToRecipient()
+    });
+    await markLeadEmailSent(lead.id, input.type);
+    await logEmailEvent({
+      email: lead.contact_email,
+      type: input.type === 'confirmation' ? 'lead_confirmation_sent' : 'lead_followup_sent',
+      meta: { lead_id: lead.id }
+    });
+    return { ok: true, resendId: resend.id || null, to: lead.contact_email, type: input.type };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Email send failed';
+    await markLeadEmailError(lead.id, message);
+    throw error;
+  }
 }

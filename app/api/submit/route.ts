@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { forwardLead } from '@/lib/leadops';
+import { forwardLead, getMissingLeadOpsEnvVars } from '@/lib/leadops';
 import { assertTopLevelLead, parseLeadMeta } from '@/lib/forms';
 import { insertLocalLead, markLeadForwardError, markLeadForwarded, upsertSubscriber } from '@/lib/storage';
 import { sendLeadTransactionalEmails } from '@/lib/email/service';
@@ -12,6 +12,13 @@ function parseReferer(input?: string | null) {
   } catch {
     return { referrer: input, pagePath: undefined as string | undefined, search: new URLSearchParams() };
   }
+}
+
+function detectDevice(userAgent: string) {
+  const ua = userAgent.toLowerCase();
+  if (/ipad|tablet/.test(ua)) return 'tablet';
+  if (/mobi|android|iphone/.test(ua)) return 'mobile';
+  return 'desktop';
 }
 
 export async function POST(req: Request) {
@@ -62,14 +69,39 @@ export async function POST(req: Request) {
 
     let forwarded = false;
     let forwardError: string | null = null;
-    try {
-      await forwardLead(payload);
-      await markLeadForwarded(localLead.id);
-      forwarded = true;
-    } catch (error) {
-      forwardError = error instanceof Error ? error.message : 'LeadOps forwarding failed';
-      console.error('LeadOps forwarding failed', { leadId: localLead.id, error: forwardError });
+    const missingLeadOpsVars = getMissingLeadOpsEnvVars();
+    if (missingLeadOpsVars.length) {
+      forwardError = `LeadOps forward_skipped — missing env var(s): ${missingLeadOpsVars.join(', ')}`;
       await markLeadForwardError(localLead.id, forwardError);
+    } else {
+      try {
+        const userAgent = req.headers.get('user-agent') || '';
+        await forwardLead(payload, {
+          source: process.env.LEADOPS_SOURCE,
+          lead_id: localLead.id,
+          lead_type: localLead.lead_type || 'general',
+          page_path: localLead.page_path || null,
+          referrer: localLead.referrer || null,
+          utm_source: localLead.utm_source || null,
+          utm_medium: localLead.utm_medium || null,
+          utm_campaign: localLead.utm_campaign || null,
+          utm_term: localLead.utm_term || null,
+          utm_content: localLead.utm_content || null,
+          device: detectDevice(userAgent),
+          user_agent: userAgent || null,
+          meta: {
+            lead_type: localLead.lead_type || 'general',
+            page_path: localLead.page_path || null,
+            subscribe_updates: subscribeUpdates
+          }
+        });
+        await markLeadForwarded(localLead.id);
+        forwarded = true;
+      } catch (error) {
+        forwardError = error instanceof Error ? error.message : 'LeadOps forwarding failed';
+        console.error('LeadOps forwarding failed', { leadId: localLead.id, error: forwardError });
+        await markLeadForwardError(localLead.id, forwardError);
+      }
     }
 
     try {

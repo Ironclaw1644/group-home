@@ -85,7 +85,10 @@ function mapLocalLead(row: CmsTables['leads']['Row']): LocalLead {
     status: row.status || 'new',
     forwarded_to_leadops: row.forwarded_to_leadops,
     leadops_forwarded_at: row.leadops_forwarded_at || undefined,
-    leadops_error: row.leadops_error || undefined
+    leadops_error: row.leadops_error || undefined,
+    confirmation_sent_at: row.confirmation_sent_at || undefined,
+    followup_sent_at: row.followup_sent_at || undefined,
+    last_email_error: row.last_email_error || undefined
   };
 }
 
@@ -402,6 +405,30 @@ export async function updateLocalLead(id: string, patch: { status?: string; lead
   const { data, error } = await supabase.from('leads').update(update).eq('id', id).select('*').single();
   assertNoError(error);
   return mapLocalLead(data as CmsTables['leads']['Row']);
+}
+
+export async function getLocalLeadById(id: string) {
+  const supabase = cmsServerClient();
+  const { data, error } = await supabase.from('leads').select('*').eq('id', id).maybeSingle();
+  assertNoError(error);
+  return data ? mapLocalLead(data as CmsTables['leads']['Row']) : null;
+}
+
+export async function markLeadEmailSent(id: string, type: 'confirmation' | 'followup') {
+  const supabase = cmsServerClient();
+  const patch: CmsTables['leads']['Update'] =
+    type === 'confirmation'
+      ? { confirmation_sent_at: nowIso(), last_email_error: null }
+      : { followup_sent_at: nowIso(), last_email_error: null };
+  const { error } = await supabase.from('leads').update(patch).eq('id', id);
+  assertNoError(error);
+}
+
+export async function markLeadEmailError(id: string, message: string) {
+  const supabase = cmsServerClient();
+  const safeMessage = message.slice(0, 1000);
+  const { error } = await supabase.from('leads').update({ last_email_error: safeMessage }).eq('id', id);
+  assertNoError(error);
 }
 
 export async function getLocalLeads(params: {
