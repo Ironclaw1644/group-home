@@ -15,6 +15,11 @@ export function buildLeadMessage(summaryLines: string[], meta: Record<string, un
   return `${summary}${notes}\n\n---meta---\n${JSON.stringify(meta)}`;
 }
 
+export function stripMetaBlock(message?: string | null) {
+  const raw = String(message || '');
+  return raw.split('---meta---')[0]?.trim() || '';
+}
+
 export function parseLeadMeta(message?: string | null) {
   if (!message) return null;
   const parts = message.split('---meta---');

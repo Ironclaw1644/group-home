@@ -17,7 +17,8 @@ import {
 import { createEmailToken } from '@/lib/email/tokens';
 import { sendResendEmail } from '@/lib/email/resend';
 import { renderLeadResponseEmail, renderMarketingEmail } from '@/lib/email/template';
-import { parseLeadMeta } from '@/lib/forms';
+import { parseLeadMeta, stripMetaBlock } from '@/lib/forms';
+import { formatEmailDateTime } from '@/lib/email/format';
 
 function adminRecipient() {
   const value = process.env.RESEND_TO?.trim();
@@ -47,8 +48,7 @@ function uniqEmails(input: string[]) {
 }
 
 function parseLeadMessageForEmail(message?: string | null) {
-  const text = String(message || '');
-  const summaryPart = text.split('---meta---')[0]?.trim() || '';
+  const summaryPart = stripMetaBlock(message);
   const lines = summaryPart
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -93,7 +93,7 @@ function leadSummaryRows(lead: LocalLead) {
     { label: 'Location', value: location || '' },
     { label: 'Timeframe', value: summaryMap.get('Timeframe') || summaryMap.get('Move-in timeframe') || '' },
     { label: 'Preferred Contact', value: summaryMap.get('Preferred contact') || '' },
-    { label: 'Submitted', value: lead.created_at || '' },
+    { label: 'Submitted', value: formatEmailDateTime(lead.created_at) || '' },
     { label: 'Additional notes', value: additionalNotes }
   ];
 

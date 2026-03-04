@@ -58,8 +58,10 @@ function renderEmailShell(input: {
       <div style="padding:18px 24px;background:linear-gradient(135deg,#0f2d45 0%,#0c9ea6 100%);color:#ffffff;">
         <table role="presentation" width="100%" style="border-collapse:collapse;">
           <tr>
-            <td width="52" valign="middle" style="padding:0;">
-              <img src="${LOGO_URL}" alt="AHFS Logo" width="42" height="42" style="display:block;border:0;border-radius:999px;background:#fff;padding:2px;" />
+            <td width="64" valign="middle" style="padding:0;">
+              <div style="width:64px;height:64px;border-radius:9999px;overflow:hidden;margin:0;padding:0;">
+                <img src="${LOGO_URL}" alt="AHFS Logo" width="64" height="64" style="display:block;width:100%;height:100%;object-fit:cover;margin:0;padding:0;border:0;" />
+              </div>
             </td>
             <td valign="middle" style="padding:0 0 0 8px;font-size:20px;font-weight:700;">At Home Family Services, LLC</td>
           </tr>

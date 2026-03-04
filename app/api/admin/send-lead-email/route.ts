@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireAdminApi } from '@/lib/api-auth';
 import { buildLeadDetailEmailDraft, sendLeadDetailEmail } from '@/lib/email/service';
+import { stripMetaBlock } from '@/lib/forms';
 import {
   getMissingResendEnvVars,
   normalizeResendFrom,
@@ -37,6 +38,8 @@ export async function POST(req: Request) {
       payload: { leadId, type, preview: body.preview === true, sendAgain: body.sendAgain === true }
     });
 
+    const sanitizedBody = typeof body.body === 'string' ? stripMetaBlock(body.body) : undefined;
+
     if (!leadId || (type !== 'confirmation' && type !== 'followup')) {
       return NextResponse.json({ error: 'leadId and valid email type are required' }, { status: 400 });
     }
@@ -61,7 +64,7 @@ export async function POST(req: Request) {
         leadId,
         type,
         subjectOverride: typeof body.subject === 'string' ? body.subject : undefined,
-        bodyOverride: typeof body.body === 'string' ? body.body : undefined,
+        bodyOverride: sanitizedBody,
         sendAgain: body.sendAgain === true
       });
       return NextResponse.json({ ok: true, subject: draft.subject, html: draft.html });
@@ -71,7 +74,7 @@ export async function POST(req: Request) {
       leadId,
       type,
       subjectOverride: typeof body.subject === 'string' ? body.subject : undefined,
-      bodyOverride: typeof body.body === 'string' ? body.body : undefined,
+      bodyOverride: sanitizedBody,
       sendAgain: body.sendAgain === true
     });
 

@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import type { Announcement, LocalLead, Subscriber } from '@/lib/types';
 import { Badge, Button, Card } from '@/components/ui';
+import { stripMetaBlock } from '@/lib/forms';
 
 type LeadRecord = LocalLead & { _notes?: { id: string; note: string; created_at: string }[] };
 
@@ -313,14 +314,13 @@ export function AdminDashboard({
   }, [loadingLeads, leads.length]);
 
   function defaultLeadEmailDraft(type: 'confirmation' | 'followup') {
-    const name = selectedLead?.contact_name?.trim() || 'there';
     const requestType = selectedLead?.lead_type ? `${selectedLead.lead_type} request` : 'request';
     const subject =
       type === 'confirmation' ? `${requestType[0].toUpperCase()}${requestType.slice(1)} Received` : `Following up on your ${requestType}`;
     const body =
       type === 'confirmation'
-        ? `Hi ${name},\n\nThank you for reaching out to At Home Family Services. We received your request and will follow up shortly.\n\nIf you need immediate help, call us at (804) 919-3030.`
-        : `Hi ${name},\n\nJust checking in with next steps for your request. If you'd like to move forward, reply to this email or call (804) 919-3030 and we can help schedule what you need.`;
+        ? `Hi,\n\nThank you for reaching out to At Home Family Services. We received your request and will follow up shortly.\n\nIf you need immediate help, call us at (804) 919-3030.`
+        : `Hi,\n\nJust checking in with next steps for your request. If you'd like to move forward, reply to this email or call (804) 919-3030 and we can help schedule what you need.`;
     return { subject, body };
   }
 
@@ -826,7 +826,7 @@ export function AdminDashboard({
                   <div>
                     <p className="font-semibold text-brand-navy">Message</p>
                     <pre className="mt-2 max-h-56 max-w-full overflow-x-auto overflow-y-auto whitespace-pre-wrap break-words rounded-xl bg-brand-sand p-3 text-xs text-brand-navy">
-                      {String(selectedLead.message || '')}
+                      {stripMetaBlock(selectedLead.message)}
                     </pre>
                   </div>
                   <div>
