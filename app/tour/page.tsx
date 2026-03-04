@@ -17,6 +17,7 @@ export default function TourPage() {
             { name: 'tour_type', label: 'Tour type', type: 'select', required: true, options: ['in-person', 'phone'] },
             { name: 'preferred_dates_times', label: 'Preferred dates/times', type: 'textarea', required: true, minLength: 5, placeholder: 'Example: Tue/Thu afternoons next week' },
             { name: 'preferred_contact_method', label: 'Preferred contact method', type: 'select', required: true, options: ['phone', 'email', 'text'] },
+            { name: 'subscribe_updates', label: 'Email updates', type: 'checkbox', placeholder: 'I would like occasional updates and announcements by email (optional).' },
             { name: 'notes', label: 'Notes', type: 'textarea' }
           ]}
           summaryLeadLabel="Tour Request"

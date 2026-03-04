@@ -23,6 +23,7 @@ export type Subscriber = {
   id: string;
   email: string;
   name?: string;
+  phone?: string;
   source: string;
   opted_in: boolean;
   status: 'active' | 'unsubscribed' | 'bounced' | 'complaint';

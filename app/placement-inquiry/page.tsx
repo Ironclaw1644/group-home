@@ -26,6 +26,7 @@ export default function PlacementInquiryPage() {
               { name: 'coverage_type', label: 'Coverage type', type: 'select', required: true, options: ['Medicaid waiver', 'private pay', 'other', 'unsure'] },
               { name: 'wants_tour_or_call', label: 'Would you like a tour or call?', type: 'select', required: true, options: ['tour', 'call', 'either'] },
               { name: 'preferred_contact_method', label: 'Preferred contact method', type: 'select', required: true, options: ['phone', 'email', 'text'] },
+              { name: 'subscribe_updates', label: 'Email updates', type: 'checkbox', placeholder: 'I would like occasional updates and announcements by email (optional).' },
               { name: 'notes', label: 'Notes', type: 'textarea', helperText: 'Please do not submit private medical details. We will discuss specifics by phone.' }
             ]}
             summaryLeadLabel="Placement Inquiry"

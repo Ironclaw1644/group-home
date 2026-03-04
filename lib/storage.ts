@@ -45,6 +45,7 @@ function mapSubscriber(row: CmsTables['subscribers']['Row']): Subscriber {
     id: row.id,
     email: row.email,
     name: row.name || undefined,
+    phone: row.phone || undefined,
     source: row.source,
     opted_in: status === 'active',
     status,
@@ -212,6 +213,7 @@ export async function upsertSubscriber(input: {
   id?: string;
   email: string;
   name?: string;
+  phone?: string;
   source: string;
   opted_in?: boolean;
   status?: Subscriber['status'];
@@ -226,7 +228,7 @@ export async function upsertSubscriber(input: {
   let createdAt = now;
   const existing = await supabase
     .from('subscribers')
-    .select('id, created_at, status, unsubscribed_at, bounced_at, complaint_at, unsubscribe_reason')
+    .select('id, created_at, status, unsubscribed_at, bounced_at, complaint_at, unsubscribe_reason, name, phone')
     .eq('email', email)
     .maybeSingle();
   assertNoError(existing.error);
@@ -241,7 +243,8 @@ export async function upsertSubscriber(input: {
   const row: CmsTables['subscribers']['Insert'] = {
     id: existing.data?.id || input.id || randomUUID(),
     email,
-    name: input.name?.trim() || null,
+    name: input.name?.trim() || existing.data?.name || null,
+    phone: input.phone?.trim() || existing.data?.phone || null,
     source: input.source,
     opted_in: nextStatus === 'active',
     status: nextStatus,

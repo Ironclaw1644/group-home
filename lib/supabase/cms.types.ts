@@ -51,6 +51,7 @@ export type Database = {
           id: string;
           email: string;
           name: string | null;
+          phone: string | null;
           source: string;
           opted_in: boolean;
           status: string;

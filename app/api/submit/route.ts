@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { forwardLead, getMissingLeadOpsEnvVars } from '@/lib/leadops';
 import { assertTopLevelLead, parseLeadMeta } from '@/lib/forms';
-import { insertLocalLead, markLeadForwardError, markLeadForwarded, upsertSubscriber } from '@/lib/storage';
+import { insertLocalLead, markLeadForwardError, markLeadForwarded } from '@/lib/storage';
 import { sendLeadTransactionalEmails } from '@/lib/email/service';
+import { upsertSubscriberFromLeadOptIn } from '@/lib/subscribers';
 
 function parseReferer(input?: string | null) {
   if (!input) return { referrer: undefined as string | undefined, pagePath: undefined as string | undefined, search: new URLSearchParams() };
@@ -55,11 +56,11 @@ export async function POST(req: Request) {
     const subscribeUpdates = meta.subscribe_updates === true || meta.subscribe_updates === 'true' || meta.subscribe_updates === 'on';
     if (subscribeUpdates && payload.contact_email) {
       try {
-        await upsertSubscriber({
+        await upsertSubscriberFromLeadOptIn({
           email: payload.contact_email,
           name: payload.contact_name,
-          source: String(meta.lead_type || 'form'),
-          opted_in: true
+          phone: payload.contact_phone,
+          source: String(meta.lead_type || 'form')
         });
       } catch (subscriberError) {
         const subscriberMessage = subscriberError instanceof Error ? subscriberError.message : 'Subscriber opt-in failed';
