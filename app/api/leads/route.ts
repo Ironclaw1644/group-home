@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getLocalLeads, updateLocalLead } from '@/lib/storage';
+import { archiveLocalLead, getLocalLeads, restoreLocalLead, updateLocalLead } from '@/lib/storage';
 import { requireAdminApi } from '@/lib/api-auth';
+import { getAdminSession } from '@/lib/auth/admin';
 
 function toNumber(value: string | null, fallback: number) {
   const parsed = Number(value);
@@ -19,6 +20,8 @@ export async function GET(req: Request) {
     const fromDays = toNumber(url.searchParams.get('fromDays') || url.searchParams.get('from'), 0);
     const page = toNumber(url.searchParams.get('page'), 1);
     const pageSize = toNumber(url.searchParams.get('pageSize'), 20);
+    const archivedParam = url.searchParams.get('archived');
+    const archived = archivedParam === 'archived' ? 'archived' : archivedParam === 'all' ? 'all' : 'active';
 
     const result = await getLocalLeads({
       q,
@@ -26,7 +29,8 @@ export async function GET(req: Request) {
       lead_type: leadType,
       fromDays: fromDays > 0 ? fromDays : undefined,
       page,
-      pageSize
+      pageSize,
+      archived
     });
 
     return NextResponse.json(result);
@@ -55,9 +59,25 @@ export async function PATCH(req: Request) {
     const unauthorized = await requireAdminApi();
     if (unauthorized) return unauthorized;
 
-    const body = (await req.json()) as { id?: string; status?: string; lead_type?: string };
+    const body = (await req.json()) as {
+      id?: string;
+      status?: string;
+      lead_type?: string;
+      action?: 'archive' | 'restore';
+    };
     if (!body.id) {
       return NextResponse.json({ error: 'id is required' }, { status: 400 });
+    }
+
+    if (body.action === 'archive') {
+      const session = await getAdminSession();
+      await archiveLocalLead(body.id, session?.email);
+      return NextResponse.json({ ok: true });
+    }
+
+    if (body.action === 'restore') {
+      await restoreLocalLead(body.id);
+      return NextResponse.json({ ok: true });
     }
 
     const updated = await updateLocalLead(body.id, {

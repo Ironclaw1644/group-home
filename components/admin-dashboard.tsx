@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
+import { RotateCcw, Trash2 } from 'lucide-react';
 import type { Announcement, LocalLead, Subscriber } from '@/lib/types';
 import { Badge, Button, Card } from '@/components/ui';
 import { stripMetaBlock } from '@/lib/forms';
@@ -75,6 +76,7 @@ export function AdminDashboard({
   const [status, setStatus] = useState('');
   const [q, setQ] = useState('');
   const [leadTypeFilter, setLeadTypeFilter] = useState('');
+  const [leadListMode, setLeadListMode] = useState<'active' | 'archived'>('active');
   const [mobileLeadFiltersOpen, setMobileLeadFiltersOpen] = useState(false);
   const [mobileLeadView, setMobileLeadView] = useState<'list' | 'detail'>('list');
   const [page, setPage] = useState(1);
@@ -82,6 +84,7 @@ export function AdminDashboard({
   const [pageSize] = useState(20);
   const [announcements, setAnnouncements] = useState(initial.announcements);
   const [subscribers, setSubscribers] = useState(initial.subscribers);
+  const [subscriberListMode, setSubscriberListMode] = useState<'active' | 'archived'>('active');
   const [leadNoteDraft, setLeadNoteDraft] = useState('');
   const [loadingLeadNotes, setLoadingLeadNotes] = useState(false);
   const [leadNoteMessage, setLeadNoteMessage] = useState<string | null>(null);
@@ -129,6 +132,7 @@ export function AdminDashboard({
       if (q) params.set('q', q);
       params.set('page', String(page));
       params.set('pageSize', String(pageSize));
+      params.set('archived', leadListMode === 'archived' ? 'archived' : 'active');
       const res = await fetch(`/api/leads?${params.toString()}`);
       if (res.status === 401) {
         window.location.href = '/admin/login';
@@ -145,6 +149,23 @@ export function AdminDashboard({
       setTotal(0);
     } finally {
       setLoadingLeads(false);
+    }
+  }
+
+  async function fetchSubscribers(mode: 'active' | 'archived' = subscriberListMode) {
+    try {
+      const params = new URLSearchParams();
+      params.set('archived', mode === 'archived' ? 'archived' : 'active');
+      const res = await fetch(`/api/admin/subscribers?${params.toString()}`);
+      if (res.status === 401) {
+        window.location.href = '/admin/login';
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load subscribers');
+      setSubscribers(Array.isArray(data) ? data : []);
+    } catch (error) {
+      setEmailError(error instanceof Error ? error.message : 'Failed to load subscribers');
     }
   }
 
@@ -285,7 +306,12 @@ export function AdminDashboard({
 
   useEffect(() => {
     fetchLeads();
-  }, [status, q, page, pageSize, leadTypeFilter]);
+  }, [status, q, page, pageSize, leadTypeFilter, leadListMode]);
+
+  useEffect(() => {
+    if (tab !== 'subscribers') return;
+    fetchSubscribers(subscriberListMode);
+  }, [tab, subscriberListMode]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !leads.length) return;
@@ -310,8 +336,8 @@ export function AdminDashboard({
 
   const leadCountLabel = useMemo(() => {
     if (loadingLeads) return 'Loading leads…';
-    return `${leads.length} leads shown`;
-  }, [loadingLeads, leads.length]);
+    return `${leads.length} ${leadListMode === 'archived' ? 'deleted leads' : 'leads shown'}`;
+  }, [loadingLeads, leads.length, leadListMode]);
 
   function defaultLeadEmailDraft(type: 'confirmation' | 'followup') {
     const requestType = selectedLead?.lead_type ? `${selectedLead.lead_type} request` : 'request';
@@ -434,6 +460,69 @@ export function AdminDashboard({
     if (data.row) {
       setLeads((prev) => prev.map((lead) => (lead.id === id ? { ...lead, ...data.row } : lead)));
       setSelectedLead((prev) => (prev && prev.id === id ? { ...prev, ...data.row } : prev));
+    }
+  }
+
+  async function archiveLead(id: string) {
+    if (!window.confirm('Delete lead?\nAre you sure? You can restore it for 30 days.')) return;
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action: 'archive' })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Failed to delete lead');
+      setLeads((prev) => prev.filter((lead) => lead.id !== id));
+      if (selectedLead?.id === id) setSelectedLead(null);
+    } catch (error) {
+      setLeadError(error instanceof Error ? error.message : 'Failed to delete lead');
+    }
+  }
+
+  async function restoreLead(id: string) {
+    try {
+      const res = await fetch('/api/leads', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action: 'restore' })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Failed to restore lead');
+      setLeads((prev) => prev.filter((lead) => lead.id !== id));
+    } catch (error) {
+      setLeadError(error instanceof Error ? error.message : 'Failed to restore lead');
+    }
+  }
+
+  async function archiveSubscriberById(id: string) {
+    if (!window.confirm('Delete subscriber?\nAre you sure? You can restore it for 30 days.')) return;
+    try {
+      const res = await fetch('/api/admin/subscribers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action: 'archive' })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Failed to delete subscriber');
+      setSubscribers((prev) => prev.filter((item) => item.id !== id));
+    } catch (error) {
+      setEmailError(error instanceof Error ? error.message : 'Failed to delete subscriber');
+    }
+  }
+
+  async function restoreSubscriberById(id: string) {
+    try {
+      const res = await fetch('/api/admin/subscribers', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, action: 'restore' })
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Failed to restore subscriber');
+      setSubscribers((prev) => prev.filter((item) => item.id !== id));
+    } catch (error) {
+      setEmailError(error instanceof Error ? error.message : 'Failed to restore subscriber');
     }
   }
 
@@ -596,6 +685,27 @@ export function AdminDashboard({
         {tab === 'leads' && (
           <div className="grid gap-5 xl:grid-cols-[1.25fr_0.75fr]">
             <Card className={mobileLeadView === 'detail' ? 'hidden md:block' : ''}>
+              <div className="mb-3 flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    setLeadListMode('active');
+                    setPage(1);
+                  }}
+                  className={`rounded-full px-3 py-1.5 text-xs font-semibold ${leadListMode === 'active' ? 'bg-brand-navy text-white' : 'border border-brand-navy/10 bg-white text-brand-slate'}`}
+                >
+                  Active Leads
+                </button>
+                <button
+                  onClick={() => {
+                    setLeadListMode('archived');
+                    setPage(1);
+                    setSelectedLead(null);
+                  }}
+                  className={`rounded-full px-3 py-1.5 text-xs font-semibold ${leadListMode === 'archived' ? 'bg-brand-navy text-white' : 'border border-brand-navy/10 bg-white text-brand-slate'}`}
+                >
+                  Recently Deleted
+                </button>
+              </div>
               <div className="mb-3 flex items-center justify-between gap-2 md:hidden">
                 <button
                   onClick={() => setMobileLeadFiltersOpen((prev) => !prev)}
@@ -651,22 +761,34 @@ export function AdminDashboard({
               <div className="mt-4 space-y-3 md:hidden">
                 {leads.map((lead) => {
                   return (
-                    <button
-                      key={lead.id}
-                      onClick={() => void openLead(lead)}
-                      className="w-full rounded-2xl border border-brand-navy/10 bg-white p-4 text-left"
-                    >
+                    <div key={lead.id} className="w-full rounded-2xl border border-brand-navy/10 bg-white p-4 text-left">
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <p className="font-semibold text-brand-navy">{lead.contact_name || 'Unknown'}</p>
                           <p className="break-all text-xs text-brand-slate">{lead.contact_email || ''}</p>
                         </div>
-                        <Badge>{lead.forwarded_to_leadops ? 'Forwarded to CRM' : 'CRM pending'}</Badge>
+                        <Badge>{lead.status || 'new'}</Badge>
                       </div>
                       <p className="mt-2 text-xs text-brand-slate">
-                        {lead.lead_type || 'unknown'} • {lead.status || 'new'} • notes {lead.notes_count || 0}
+                        {lead.lead_type || 'unknown'} • notes {lead.notes_count || 0}
                       </p>
-                    </button>
+                      <div className="mt-3 flex items-center gap-2">
+                        {leadListMode === 'active' ? (
+                          <>
+                            <button onClick={() => void openLead(lead)} className="rounded-lg border px-2 py-1 text-xs text-brand-teal">
+                              View
+                            </button>
+                            <button onClick={() => void archiveLead(lead.id)} className="rounded-lg border p-1.5 text-rose-600" aria-label="Delete lead">
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </>
+                        ) : (
+                          <button onClick={() => void restoreLead(lead.id)} className="rounded-lg border px-2 py-1 text-xs">
+                            <span className="inline-flex items-center gap-1"><RotateCcw className="h-3.5 w-3.5" /> Restore</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   );
                 })}
               </div>
@@ -679,7 +801,7 @@ export function AdminDashboard({
                       <th className="px-2 py-2">Contact</th>
                       <th className="px-2 py-2">Type</th>
                       <th className="px-2 py-2">Status</th>
-                      <th className="px-2 py-2">CRM</th>
+                      <th className="px-2 py-2">Forwarded</th>
                       <th className="px-2 py-2">Notes</th>
                       <th className="px-2 py-2">Action</th>
                     </tr>
@@ -697,12 +819,23 @@ export function AdminDashboard({
                           </td>
                           <td className="px-2 py-2">{lead.lead_type || ''}</td>
                           <td className="px-2 py-2">{lead.status || ''}</td>
-                          <td className="px-2 py-2">{lead.forwarded_to_leadops ? 'forwarded' : 'pending'}</td>
+                          <td className="px-2 py-2">{lead.forwarded_to_leadops ? 'Yes' : 'Pending'}</td>
                           <td className="px-2 py-2">{lead.notes_count || 0}</td>
                           <td className="px-2 py-2">
-                            <button onClick={() => void openLead(lead)} className="text-brand-teal">
-                              View
-                            </button>
+                            {leadListMode === 'active' ? (
+                              <div className="flex items-center gap-2">
+                                <button onClick={() => void openLead(lead)} className="rounded-lg border px-2 py-1 text-xs text-brand-teal">
+                                  View
+                                </button>
+                                <button onClick={() => void archiveLead(lead.id)} className="rounded-lg border p-1.5 text-rose-600" aria-label="Delete lead">
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
+                            ) : (
+                              <button onClick={() => void restoreLead(lead.id)} className="rounded-lg border px-2 py-1 text-xs">
+                                <span className="inline-flex items-center gap-1"><RotateCcw className="h-3.5 w-3.5" /> Restore</span>
+                              </button>
+                            )}
                           </td>
                         </tr>
                       );
@@ -712,6 +845,7 @@ export function AdminDashboard({
               </div>
             </Card>
 
+            {leadListMode === 'active' ? (
             <Card className={`${mobileLeadView === 'list' ? 'hidden md:block' : ''} max-w-full overflow-x-hidden`}>
               <div className="mb-3 md:hidden">
                 <button
@@ -739,7 +873,7 @@ export function AdminDashboard({
                     <DetailRow label="Phone" value={selectedLead.contact_phone} />
                     <DetailRow label="Lead Type" value={selectedLead.lead_type} />
                     <DetailRow label="Status" value={selectedLead.status} />
-                    <DetailRow label="Forwarded to CRM" value={selectedLead.forwarded_to_leadops ? 'Yes' : 'No'} />
+                    <DetailRow label="Forwarded to System" value={selectedLead.forwarded_to_leadops ? 'Yes' : 'No'} />
                     <DetailRow label="Manual Confirmation Sent" value={selectedLead.confirmation_sent_at || 'No'} />
                     <DetailRow label="Manual Follow-up Sent" value={selectedLead.followup_sent_at || 'No'} />
                     <DetailRow label="Last Email Error" value={selectedLead.last_email_error || 'None'} />
@@ -858,6 +992,7 @@ export function AdminDashboard({
                 </div>
               )}
             </Card>
+            ) : null}
           </div>
         )}
 
@@ -917,8 +1052,21 @@ export function AdminDashboard({
               </form>
             </Card>
             <Card>
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-lg font-semibold">Subscribers</h2>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setSubscriberListMode('active')}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold ${subscriberListMode === 'active' ? 'bg-brand-navy text-white' : 'border border-brand-navy/10 bg-white text-brand-slate'}`}
+                  >
+                    Active
+                  </button>
+                  <button
+                    onClick={() => setSubscriberListMode('archived')}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold ${subscriberListMode === 'archived' ? 'bg-brand-navy text-white' : 'border border-brand-navy/10 bg-white text-brand-slate'}`}
+                  >
+                    Recently Deleted
+                  </button>
+                </div>
                 <a href="/api/admin/export/subscribers" className="text-sm text-brand-teal">
                   Export CSV
                 </a>
@@ -932,18 +1080,29 @@ export function AdminDashboard({
                       {subscriber.name || 'No name'} • {subscriber.source} • {subscriber.status} • {subscriber.created_at.slice(0, 10)}
                     </p>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <button onClick={() => setSubscriberStatus(subscriber.id, 'unsubscribed')} className="rounded-lg border px-2 py-1 text-xs">
-                        Unsubscribe
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (!window.confirm('This subscriber is suppressed. Re-enable marketing emails?')) return;
-                          void setSubscriberStatus(subscriber.id, 'active', true);
-                        }}
-                        className="rounded-lg border px-2 py-1 text-xs"
-                      >
-                        Re-enable
-                      </button>
+                      {subscriberListMode === 'active' ? (
+                        <>
+                          <button onClick={() => setSubscriberStatus(subscriber.id, 'unsubscribed')} className="rounded-lg border px-2 py-1 text-xs">
+                            Unsubscribe
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (!window.confirm('This subscriber is suppressed. Re-enable marketing emails?')) return;
+                              void setSubscriberStatus(subscriber.id, 'active', true);
+                            }}
+                            className="rounded-lg border px-2 py-1 text-xs"
+                          >
+                            Re-enable
+                          </button>
+                          <button onClick={() => void archiveSubscriberById(subscriber.id)} className="rounded-lg border p-1.5 text-rose-600" aria-label="Delete subscriber">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </>
+                      ) : (
+                        <button onClick={() => void restoreSubscriberById(subscriber.id)} className="rounded-lg border px-2 py-1 text-xs">
+                          <span className="inline-flex items-center gap-1"><RotateCcw className="h-3.5 w-3.5" /> Restore</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -969,20 +1128,29 @@ export function AdminDashboard({
                         <td className="px-2 py-2">{subscriber.status}</td>
                         <td className="px-2 py-2">{subscriber.created_at.slice(0, 10)}</td>
                         <td className="px-2 py-2">
-                          <div className="flex gap-2">
-                            <button onClick={() => setSubscriberStatus(subscriber.id, 'unsubscribed')} className="rounded-lg border px-2 py-1 text-xs">
-                              Unsubscribe
+                          {subscriberListMode === 'active' ? (
+                            <div className="flex gap-2">
+                              <button onClick={() => setSubscriberStatus(subscriber.id, 'unsubscribed')} className="rounded-lg border px-2 py-1 text-xs">
+                                Unsubscribe
+                              </button>
+                              <button
+                                onClick={() => {
+                                  if (!window.confirm('This subscriber is suppressed. Re-enable marketing emails?')) return;
+                                  void setSubscriberStatus(subscriber.id, 'active', true);
+                                }}
+                                className="rounded-lg border px-2 py-1 text-xs"
+                              >
+                                Re-enable
+                              </button>
+                              <button onClick={() => void archiveSubscriberById(subscriber.id)} className="rounded-lg border p-1.5 text-rose-600" aria-label="Delete subscriber">
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <button onClick={() => void restoreSubscriberById(subscriber.id)} className="rounded-lg border px-2 py-1 text-xs">
+                              <span className="inline-flex items-center gap-1"><RotateCcw className="h-3.5 w-3.5" /> Restore</span>
                             </button>
-                            <button
-                              onClick={() => {
-                                if (!window.confirm('This subscriber is suppressed. Re-enable marketing emails?')) return;
-                                void setSubscriberStatus(subscriber.id, 'active', true);
-                              }}
-                              className="rounded-lg border px-2 py-1 text-xs"
-                            >
-                              Re-enable
-                            </button>
-                          </div>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -1134,10 +1302,10 @@ export function AdminDashboard({
               <p className="mt-1 text-sm text-brand-slate">Send updates to active subscribers only. Unsubscribed and bounced emails are skipped.</p>
               <div className="mt-3 rounded-xl border border-brand-navy/10 bg-brand-sand/40 p-3 text-xs text-brand-slate">
                 <p className="font-semibold text-brand-navy">System settings check</p>
-                <p>RESEND_API_KEY: {emailSettings?.resendApiKeyPresent ? 'present' : 'missing'}</p>
-                <p>RESEND_FROM: {emailSettings?.resendFromPresent ? 'present' : 'missing'}{emailSettings && !emailSettings.resendFromValid ? ' (invalid format)' : ''}</p>
-                <p>RESEND_TO: {emailSettings?.resendToPresent ? 'present' : 'missing'}</p>
-                <p>RESEND_REPLY_TO: {emailSettings?.resendReplyToPresent ? 'present' : 'missing'}</p>
+                <p>Resend connected: {emailSettings?.resendApiKeyPresent ? 'Yes' : 'No'}</p>
+                <p>From address set: {emailSettings?.resendFromPresent ? 'Yes' : 'No'}{emailSettings && !emailSettings.resendFromValid ? ' (invalid format)' : ''}</p>
+                <p>Admin notifications email set: {emailSettings?.resendToPresent ? 'Yes' : 'No'}</p>
+                <p>Reply-to address set: {emailSettings?.resendReplyToPresent ? 'Yes' : 'No'}</p>
                 <button
                   onClick={sendAdminTestEmail}
                   disabled={sendingAdminTestEmail}

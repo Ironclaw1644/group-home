@@ -59,6 +59,8 @@ export type Database = {
           bounced_at: string | null;
           complaint_at: string | null;
           unsubscribe_reason: string | null;
+          archived_at: string | null;
+          archived_by: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -144,6 +146,8 @@ export type Database = {
           last_email_error: string | null;
           admin_notified_at: string | null;
           admin_notify_error: string | null;
+          archived_at: string | null;
+          archived_by: string | null;
         };
         Insert: Partial<Database['athome_family_services_llc']['Tables']['leads']['Row']>;
         Update: Partial<Database['athome_family_services_llc']['Tables']['leads']['Row']>;

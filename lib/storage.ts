@@ -53,6 +53,8 @@ function mapSubscriber(row: CmsTables['subscribers']['Row']): Subscriber {
     bounced_at: row.bounced_at || undefined,
     complaint_at: row.complaint_at || undefined,
     unsubscribe_reason: row.unsubscribe_reason || undefined,
+    archived_at: row.archived_at || undefined,
+    archived_by: row.archived_by || undefined,
     created_at: row.created_at,
   };
 }
@@ -91,7 +93,9 @@ function mapLocalLead(row: CmsTables['leads']['Row']): LocalLead {
     followup_sent_at: row.followup_sent_at || undefined,
     last_email_error: row.last_email_error || undefined,
     admin_notified_at: row.admin_notified_at || undefined,
-    admin_notify_error: row.admin_notify_error || undefined
+    admin_notify_error: row.admin_notify_error || undefined,
+    archived_at: row.archived_at || undefined,
+    archived_by: row.archived_by || undefined
   };
 }
 
@@ -164,7 +168,11 @@ export async function dbGet<K extends keyof DbShape>(key: K): Promise<DbShape[K]
   }
 
   if (key === 'subscribers') {
-    const { data, error } = await supabase.from('subscribers').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .from('subscribers')
+      .select('*')
+      .is('archived_at', null)
+      .order('created_at', { ascending: false });
     assertNoError(error);
     return ((data as CmsTables['subscribers']['Row'][] | null) || []).map(mapSubscriber) as DbShape[K];
   }
@@ -466,6 +474,25 @@ export async function markLeadAdminNotifyError(id: string, message: string) {
   assertNoError(error);
 }
 
+export async function archiveLocalLead(id: string, archivedBy?: string) {
+  const supabase = cmsServerClient();
+  const { error } = await supabase
+    .from('leads')
+    .update({ archived_at: nowIso(), archived_by: archivedBy?.trim() || null })
+    .eq('id', id)
+    .is('archived_at', null);
+  assertNoError(error);
+}
+
+export async function restoreLocalLead(id: string) {
+  const supabase = cmsServerClient();
+  const { error } = await supabase
+    .from('leads')
+    .update({ archived_at: null, archived_by: null })
+    .eq('id', id);
+  assertNoError(error);
+}
+
 export async function getLocalLeads(params: {
   q?: string;
   status?: string;
@@ -473,6 +500,7 @@ export async function getLocalLeads(params: {
   fromDays?: number;
   page?: number;
   pageSize?: number;
+  archived?: 'active' | 'archived' | 'all';
 }) {
   const supabase = cmsServerClient();
   const page = Math.max(1, Number(params.page || 1));
@@ -481,6 +509,8 @@ export async function getLocalLeads(params: {
   const to = from + pageSize - 1;
 
   let query = supabase.from('leads').select('*', { count: 'exact' });
+  if (params.archived === 'archived') query = query.not('archived_at', 'is', null);
+  else if (params.archived !== 'all') query = query.is('archived_at', null);
   if (params.status) query = query.eq('status', params.status);
   if (params.lead_type) query = query.eq('lead_type', params.lead_type);
   if (params.fromDays && params.fromDays > 0) {
@@ -550,11 +580,70 @@ export async function logEmailEvent(input: { email: string; type: string; meta?:
 
 export async function listSubscribersForBlast(source?: string) {
   const supabase = cmsServerClient();
-  let query = supabase.from('subscribers').select('*').order('created_at', { ascending: false });
+  let query = supabase
+    .from('subscribers')
+    .select('*')
+    .is('archived_at', null)
+    .order('created_at', { ascending: false });
   if (source) query = query.eq('source', source);
   const { data, error } = await query;
   assertNoError(error);
   return ((data as CmsTables['subscribers']['Row'][] | null) || []).map(mapSubscriber);
+}
+
+export async function listSubscribers(params?: { archived?: 'active' | 'archived' | 'all' }) {
+  const mode = params?.archived || 'active';
+  const supabase = cmsServerClient();
+  let query = supabase.from('subscribers').select('*').order('created_at', { ascending: false });
+  if (mode === 'archived') query = query.not('archived_at', 'is', null);
+  else if (mode !== 'all') query = query.is('archived_at', null);
+  const { data, error } = await query;
+  assertNoError(error);
+  return ((data as CmsTables['subscribers']['Row'][] | null) || []).map(mapSubscriber);
+}
+
+export async function archiveSubscriber(id: string, archivedBy?: string) {
+  const supabase = cmsServerClient();
+  const { error } = await supabase
+    .from('subscribers')
+    .update({ archived_at: nowIso(), archived_by: archivedBy?.trim() || null })
+    .eq('id', id)
+    .is('archived_at', null);
+  assertNoError(error);
+}
+
+export async function restoreSubscriber(id: string) {
+  const supabase = cmsServerClient();
+  const { error } = await supabase
+    .from('subscribers')
+    .update({ archived_at: null, archived_by: null })
+    .eq('id', id);
+  assertNoError(error);
+}
+
+export async function purgeArchivedOlderThan(days = 30) {
+  const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+  const supabase = cmsServerClient();
+
+  const leadsRes = await supabase
+    .from('leads')
+    .delete({ count: 'exact' })
+    .lt('archived_at', cutoff)
+    .not('archived_at', 'is', null);
+  assertNoError(leadsRes.error);
+
+  const subscribersRes = await supabase
+    .from('subscribers')
+    .delete({ count: 'exact' })
+    .lt('archived_at', cutoff)
+    .not('archived_at', 'is', null);
+  assertNoError(subscribersRes.error);
+
+  return {
+    leadsDeleted: leadsRes.count || 0,
+    subscribersDeleted: subscribersRes.count || 0,
+    cutoff
+  };
 }
 
 export async function listEmailCampaigns(limit = 20) {

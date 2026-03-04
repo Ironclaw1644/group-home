@@ -31,6 +31,8 @@ export type Subscriber = {
   bounced_at?: string;
   complaint_at?: string;
   unsubscribe_reason?: string;
+  archived_at?: string;
+  archived_by?: string;
   created_at: string;
 };
 
@@ -66,6 +68,8 @@ export type LocalLead = {
   last_email_error?: string;
   admin_notified_at?: string;
   admin_notify_error?: string;
+  archived_at?: string;
+  archived_by?: string;
   notes_count?: number;
 };
 

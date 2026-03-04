@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
 import { requireAdminApi } from '@/lib/api-auth';
-import { dbGet, updateSubscriberStatusById, upsertSubscriber } from '@/lib/storage';
+import { archiveSubscriber, listSubscribers, restoreSubscriber, updateSubscriberStatusById, upsertSubscriber } from '@/lib/storage';
+import { getAdminSession } from '@/lib/auth/admin';
 
-export async function GET() {
+export async function GET(req: Request) {
   const unauthorized = await requireAdminApi();
   if (unauthorized) return unauthorized;
-  return NextResponse.json(await dbGet('subscribers'));
+  const url = new URL(req.url);
+  const archivedParam = url.searchParams.get('archived');
+  const archived = archivedParam === 'archived' ? 'archived' : archivedParam === 'all' ? 'all' : 'active';
+  return NextResponse.json(await listSubscribers({ archived }));
 }
 
 export async function POST(req: Request) {
@@ -28,8 +32,22 @@ export async function PATCH(req: Request) {
   if (unauthorized) return unauthorized;
   const body = await req.json();
   const id = String(body.id || '');
+  const action = String(body.action || '');
+  if (!id) return NextResponse.json({ error: 'id is required' }, { status: 400 });
+
+  if (action === 'archive') {
+    const session = await getAdminSession();
+    await archiveSubscriber(id, session?.email);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (action === 'restore') {
+    await restoreSubscriber(id);
+    return NextResponse.json({ ok: true });
+  }
+
   const status = String(body.status || '') as 'active' | 'unsubscribed' | 'bounced' | 'complaint';
-  if (!id || !status) return NextResponse.json({ error: 'id and status are required' }, { status: 400 });
+  if (!status) return NextResponse.json({ error: 'id and status are required' }, { status: 400 });
 
   try {
     const item = await updateSubscriberStatusById(id, status, {
