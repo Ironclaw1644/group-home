@@ -63,6 +63,8 @@ export type LocalLead = {
   confirmation_sent_at?: string;
   followup_sent_at?: string;
   last_email_error?: string;
+  admin_notified_at?: string;
+  admin_notify_error?: string;
   notes_count?: number;
 };
 

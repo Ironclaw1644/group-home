@@ -10,6 +10,8 @@ import {
   getSubscriberByEmail,
   listSubscribersForBlast,
   logEmailEvent,
+  markLeadAdminNotified,
+  markLeadAdminNotifyError,
   markLeadEmailError,
   markLeadEmailSent,
   recordEmailCampaignRecipient,
@@ -26,8 +28,24 @@ function adminRecipient() {
   return value;
 }
 
+function adminNotificationRecipients() {
+  const raw = process.env.RESEND_REPLY_TO?.trim();
+  if (!raw) throw new Error('RESEND_REPLY_TO is required');
+  const recipients = raw
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+  if (!recipients.length) throw new Error('RESEND_REPLY_TO does not contain any valid email addresses');
+  return Array.from(new Set(recipients.map((item) => item.toLowerCase())));
+}
+
 function replyToRecipient() {
-  return process.env.RESEND_REPLY_TO?.trim() || 'Athomefamilyservice@yahoo.com';
+  const raw = process.env.RESEND_REPLY_TO?.trim();
+  if (!raw) return 'Athomefamilyservice@yahoo.com';
+  return raw
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)[0] || 'Athomefamilyservice@yahoo.com';
 }
 
 function unsubscribeUrl(email: string) {
@@ -225,45 +243,44 @@ function leadTypeLabel(leadType?: string) {
 }
 
 export async function sendLeadTransactionalEmails(lead: LocalLead) {
-  const adminTo = adminRecipient();
-  const typeLabel = leadTypeLabel(lead.lead_type);
-  const summary = leadSummaryRows(lead);
+  const currentLead = await getLocalLeadById(lead.id);
+  if (!currentLead) throw new Error('Lead not found');
+  if (currentLead.admin_notified_at) {
+    return { ok: true, skipped: true };
+  }
 
-  await sendResendEmail({
-    to: adminTo,
-    subject: `New ${typeLabel} submission`,
-    html: renderLeadResponseEmail({
-      title: `New ${typeLabel} submission`,
-      intro: 'A new request was submitted on the website.',
-      summary,
-      unsubscribeUrl: unsubscribeUrl(adminTo),
-      replyToEmail: replyToRecipient()
-    }),
-    replyTo: replyToRecipient()
-  });
-  await logEmailEvent({ email: adminTo, type: 'sent', meta: { kind: 'lead_admin_notification', lead_id: lead.id } });
-
-  if (!lead.contact_email) return;
-
-  const subscriber = await getSubscriberByEmail(lead.contact_email);
+  const recipients = adminNotificationRecipients();
+  const typeLabel = leadTypeLabel(currentLead.lead_type);
+  const summary = leadSummaryRows(currentLead);
+  const leadName = currentLead.contact_name?.trim() || 'New Lead';
+  const subject = `New ${typeLabel} Submitted — ${leadName}`;
+  const adminUrl = `${SITE_URL}/admin?leadId=${encodeURIComponent(currentLead.id)}`;
   const html = renderLeadResponseEmail({
-    title: 'We received your request',
-    intro: 'Thank you for contacting At Home Family Services, LLC. We received your request and will follow up soon.',
-    body: 'If you need immediate help, call us at (804) 919-3030.',
+    title: subject,
+    intro: 'A new request was submitted on the website.',
     summary,
-    unsubscribeUrl: unsubscribeUrl(lead.contact_email),
-    replyToEmail: replyToRecipient()
+    unsubscribeUrl: `${SITE_URL}/admin`,
+    replyToEmail: replyToRecipient(),
+    ctaButtons: [{ label: 'Open Lead in Admin', href: adminUrl, bgColor: '#0f2d45' }]
   });
-  await sendResendEmail({ to: lead.contact_email, subject: 'We received your request', html });
-  await logEmailEvent({
-    email: lead.contact_email,
-    type: 'sent',
-    meta: {
-      kind: 'lead_confirmation',
-      lead_id: lead.id,
-      subscriber_status: subscriber?.status || 'none'
+
+  try {
+    for (const recipient of recipients) {
+      await sendResendEmail({
+        to: recipient,
+        subject,
+        html,
+        replyTo: replyToRecipient()
+      });
+      await logEmailEvent({ email: recipient, type: 'sent', meta: { kind: 'lead_admin_notification', lead_id: currentLead.id } });
     }
-  });
+    await markLeadAdminNotified(currentLead.id);
+    return { ok: true, skipped: false };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Admin notification failed';
+    await markLeadAdminNotifyError(currentLead.id, message);
+    throw error;
+  }
 }
 
 export async function sendLeadDetailEmail(input: {

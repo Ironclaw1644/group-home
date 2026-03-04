@@ -104,6 +104,7 @@ export function renderLeadResponseEmail(input: {
   summary: Array<{ label: string; value: string }>;
   unsubscribeUrl: string;
   replyToEmail: string;
+  ctaButtons?: Array<{ label: string; href: string; bgColor?: string }>;
 }) {
   const summaryRows = input.summary
     .filter((item) => item.value.trim())
@@ -121,6 +122,15 @@ export function renderLeadResponseEmail(input: {
       )}</p>`
     : '';
 
+  const extraButtons = (input.ctaButtons || [])
+    .map(
+      (button) =>
+        `<a href="${escapeHtml(button.href)}" style="display:inline-block;background:${escapeHtml(
+          button.bgColor || '#0f2d45'
+        )};color:#fff;text-decoration:none;padding:10px 14px;border-radius:10px;font-weight:600;">${escapeHtml(button.label)}</a>`
+    )
+    .join('');
+
   return renderEmailShell({
     title: input.title,
     contentHtml: `<p style="margin:0 0 14px 0;line-height:1.6;color:#315069;word-break:break-word;overflow-wrap:anywhere;">${escapeHtml(
@@ -129,6 +139,7 @@ export function renderLeadResponseEmail(input: {
     ${bodyHtml}
     <table style="width:100%;border-collapse:collapse;margin:0 0 20px 0;">${summaryRows}</table>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      ${extraButtons}
       <a href="tel:+18049193030" style="display:inline-block;background:#0f2d45;color:#fff;text-decoration:none;padding:10px 14px;border-radius:10px;font-weight:600;">Call (804) 919-3030</a>
       <a href="mailto:${escapeHtml(input.replyToEmail)}" style="display:inline-block;background:#0c9ea6;color:#fff;text-decoration:none;padding:10px 14px;border-radius:10px;font-weight:600;">Reply by Email</a>
     </div>`,

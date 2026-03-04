@@ -740,8 +740,8 @@ export function AdminDashboard({
                     <DetailRow label="Lead Type" value={selectedLead.lead_type} />
                     <DetailRow label="Status" value={selectedLead.status} />
                     <DetailRow label="Forwarded to CRM" value={selectedLead.forwarded_to_leadops ? 'Yes' : 'No'} />
-                    <DetailRow label="Confirmation Email Sent" value={selectedLead.confirmation_sent_at || 'No'} />
-                    <DetailRow label="Follow-up Email Sent" value={selectedLead.followup_sent_at || 'No'} />
+                    <DetailRow label="Manual Confirmation Sent" value={selectedLead.confirmation_sent_at || 'No'} />
+                    <DetailRow label="Manual Follow-up Sent" value={selectedLead.followup_sent_at || 'No'} />
                     <DetailRow label="Last Email Error" value={selectedLead.last_email_error || 'None'} />
                     <DetailRow label="Created" value={selectedLead.created_at || ''} />
                   </div>

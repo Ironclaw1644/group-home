@@ -88,7 +88,9 @@ function mapLocalLead(row: CmsTables['leads']['Row']): LocalLead {
     leadops_error: row.leadops_error || undefined,
     confirmation_sent_at: row.confirmation_sent_at || undefined,
     followup_sent_at: row.followup_sent_at || undefined,
-    last_email_error: row.last_email_error || undefined
+    last_email_error: row.last_email_error || undefined,
+    admin_notified_at: row.admin_notified_at || undefined,
+    admin_notify_error: row.admin_notify_error || undefined
   };
 }
 
@@ -439,6 +441,25 @@ export async function markLeadEmailError(id: string, message: string) {
   const supabase = cmsServerClient();
   const safeMessage = message.slice(0, 1000);
   const { error } = await supabase.from('leads').update({ last_email_error: safeMessage }).eq('id', id);
+  assertNoError(error);
+}
+
+export async function markLeadAdminNotified(id: string) {
+  const supabase = cmsServerClient();
+  const { error } = await supabase
+    .from('leads')
+    .update({ admin_notified_at: nowIso(), admin_notify_error: null })
+    .eq('id', id);
+  assertNoError(error);
+}
+
+export async function markLeadAdminNotifyError(id: string, message: string) {
+  const supabase = cmsServerClient();
+  const safeMessage = message.slice(0, 1000);
+  const { error } = await supabase
+    .from('leads')
+    .update({ admin_notify_error: safeMessage })
+    .eq('id', id);
   assertNoError(error);
 }
 

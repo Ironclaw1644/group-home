@@ -141,6 +141,8 @@ export type Database = {
           confirmation_sent_at: string | null;
           followup_sent_at: string | null;
           last_email_error: string | null;
+          admin_notified_at: string | null;
+          admin_notify_error: string | null;
         };
         Insert: Partial<Database['athome_family_services_llc']['Tables']['leads']['Row']>;
         Update: Partial<Database['athome_family_services_llc']['Tables']['leads']['Row']>;
