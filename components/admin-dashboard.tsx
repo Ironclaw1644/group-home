@@ -113,14 +113,6 @@ export function AdminDashboard({
   const [testingCampaign, setTestingCampaign] = useState(false);
   const [emailMessage, setEmailMessage] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
-  const [emailSettings, setEmailSettings] = useState<{
-    resendApiKeyPresent: boolean;
-    resendFromPresent: boolean;
-    resendFromValid: boolean;
-    resendToPresent: boolean;
-    resendReplyToPresent: boolean;
-  } | null>(null);
-  const [sendingAdminTestEmail, setSendingAdminTestEmail] = useState(false);
 
   async function fetchLeads() {
     setLoadingLeads(true);
@@ -204,21 +196,6 @@ export function AdminDashboard({
     }
   }
 
-  async function fetchEmailSettings() {
-    try {
-      const res = await fetch('/api/admin/email-settings');
-      if (res.status === 401) {
-        window.location.href = '/admin/login';
-        return;
-      }
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to load email settings');
-      setEmailSettings(data);
-    } catch (error) {
-      setEmailError(error instanceof Error ? error.message : 'Failed to load email settings');
-    }
-  }
-
   async function sendTestEmail() {
     setTestingCampaign(true);
     setEmailError(null);
@@ -273,22 +250,6 @@ export function AdminDashboard({
     }
   }
 
-  async function sendAdminTestEmail() {
-    setSendingAdminTestEmail(true);
-    setEmailError(null);
-    setEmailMessage(null);
-    try {
-      const res = await fetch('/api/admin/send-test-email', { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to send test email');
-      setEmailMessage('Test email sent to admin recipient.');
-    } catch (error) {
-      setEmailError(error instanceof Error ? error.message : 'Failed to send test email');
-    } finally {
-      setSendingAdminTestEmail(false);
-    }
-  }
-
   async function setSubscriberStatus(id: string, nextStatus: 'active' | 'unsubscribed' | 'bounced' | 'complaint', forceResubscribe = false) {
     try {
       const res = await fetch('/api/admin/subscribers', {
@@ -331,7 +292,6 @@ export function AdminDashboard({
   useEffect(() => {
     if (tab !== 'email') return;
     fetchCampaigns();
-    fetchEmailSettings();
   }, [tab]);
 
   const leadCountLabel = useMemo(() => {
@@ -1300,20 +1260,6 @@ export function AdminDashboard({
             <Card>
               <h2 className="text-lg font-semibold text-brand-navy">Email Blasts</h2>
               <p className="mt-1 text-sm text-brand-slate">Send updates to active subscribers only. Unsubscribed and bounced emails are skipped.</p>
-              <div className="mt-3 rounded-xl border border-brand-navy/10 bg-brand-sand/40 p-3 text-xs text-brand-slate">
-                <p className="font-semibold text-brand-navy">System settings check</p>
-                <p>Resend connected: {emailSettings?.resendApiKeyPresent ? 'Yes' : 'No'}</p>
-                <p>From address set: {emailSettings?.resendFromPresent ? 'Yes' : 'No'}{emailSettings && !emailSettings.resendFromValid ? ' (invalid format)' : ''}</p>
-                <p>Admin notifications email set: {emailSettings?.resendToPresent ? 'Yes' : 'No'}</p>
-                <p>Reply-to address set: {emailSettings?.resendReplyToPresent ? 'Yes' : 'No'}</p>
-                <button
-                  onClick={sendAdminTestEmail}
-                  disabled={sendingAdminTestEmail}
-                  className="mt-2 rounded-lg border border-brand-navy/10 bg-white px-2 py-1 text-xs font-medium disabled:opacity-60"
-                >
-                  {sendingAdminTestEmail ? 'Sending test...' : 'Send test email to admin'}
-                </button>
-              </div>
               <div className="mt-4 space-y-3">
                 <input
                   value={emailSubject}

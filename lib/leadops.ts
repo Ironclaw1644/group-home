@@ -1,9 +1,20 @@
 import { assertTopLevelLead } from '@/lib/forms';
 
+function normalizeEnvValue(value: string) {
+  const trimmed = value.trim();
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+  return trimmed;
+}
+
 function envRequired(name: string) {
   const value = process.env[name];
-  if (!value) throw new Error(`Missing env var: ${name}`);
-  return value;
+  if (!value?.trim()) throw new Error(`Missing env var: ${name}`);
+  return normalizeEnvValue(value);
 }
 
 const REQUIRED_ENV_VARS = ['LEADOPS_API_ROUTE', 'LEADOPS_TOKEN', 'LEADOPS_SOURCE'] as const;
@@ -19,6 +30,9 @@ export async function forwardLead(body: unknown, extra?: Record<string, unknown>
     throw new Error('LeadOps forward_skipped — LEADOPS_API_ROUTE must be a full https URL');
   }
   const token = envRequired('LEADOPS_TOKEN');
+  const ingestKey = process.env.LEADOPS_INGEST_KEY?.trim()
+    ? normalizeEnvValue(process.env.LEADOPS_INGEST_KEY)
+    : token;
   const source = envRequired('LEADOPS_SOURCE');
 
   const requestBody = {
@@ -31,7 +45,10 @@ export async function forwardLead(body: unknown, extra?: Record<string, unknown>
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`
+      Authorization: `Bearer ${token}`,
+      'x-leadops-token': token,
+      'x-ingest-key': ingestKey,
+      'x-leadops-ingest-key': ingestKey
     },
     body: JSON.stringify(requestBody),
     cache: 'no-store'
@@ -47,7 +64,7 @@ export async function forwardLead(body: unknown, extra?: Record<string, unknown>
 
   if (!res.ok) {
     if (res.status === 401) {
-      throw new Error('LeadOps auth failed — check LEADOPS_TOKEN in Vercel');
+      throw new Error('LeadOps auth failed — check LEADOPS_TOKEN/LEADOPS_INGEST_KEY in Vercel');
     }
     throw new Error(`LeadOps submit failed (${res.status}). Check LeadOps route and credentials.`);
   }
