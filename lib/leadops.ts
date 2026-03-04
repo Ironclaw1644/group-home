@@ -63,10 +63,23 @@ export async function forwardLead(body: unknown, extra?: Record<string, unknown>
   }
 
   if (!res.ok) {
+    const detail =
+      typeof (data as { message?: unknown })?.message === 'string'
+        ? (data as { message: string }).message
+        : typeof (data as { error?: unknown })?.error === 'string'
+          ? (data as { error: string }).error
+          : typeof text === 'string' && text.trim()
+            ? text.trim().slice(0, 300)
+            : '';
+
     if (res.status === 401) {
       throw new Error('LeadOps auth failed — check LEADOPS_TOKEN/LEADOPS_INGEST_KEY in Vercel');
     }
-    throw new Error(`LeadOps submit failed (${res.status}). Check LeadOps route and credentials.`);
+    throw new Error(
+      detail
+        ? `LeadOps submit failed (${res.status}): ${detail}`
+        : `LeadOps submit failed (${res.status}). Check LeadOps route and payload format.`
+    );
   }
 
   return data;

@@ -79,6 +79,8 @@ export async function POST(req: Request) {
         const userAgent = req.headers.get('user-agent') || '';
         await forwardLead(payload, {
           source: process.env.LEADOPS_SOURCE,
+          source_project: process.env.LEADOPS_SOURCE_PROJECT?.trim() || process.env.LEADOPS_SOURCE?.trim() || 'athomefamilyservices',
+          source_channel: process.env.LEADOPS_SOURCE_CHANNEL?.trim() || 'website',
           lead_id: localLead.id,
           lead_type: localLead.lead_type || 'general',
           page_path: localLead.page_path || null,
