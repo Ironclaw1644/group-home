@@ -73,6 +73,7 @@ Copy `.env.example` and set:
 - `RESEND_REPLY_TO`
 - `RESEND_WEBHOOK_SECRET`
 - `EMAIL_TOKEN_SECRET`
+- `CRON_SECRET` (required for the daily archive-purge cron — see below)
 - `CMS_SUPABASE_URL`
 - `CMS_SUPABASE_SERVICE_ROLE_KEY` (server-only)
 - `CMS_SCHEMA=athome_family_services_llc`
@@ -130,6 +131,12 @@ The generator script is `scripts/generate-icons.mjs` and uses the local ImageMag
 - `NEXT_PUBLIC_SITE_URL` should match the deployed domain (`https://athomefamilyservices.com`).
 - Configure `CMS_SUPABASE_URL`, `CMS_SUPABASE_SERVICE_ROLE_KEY`, and `CMS_SCHEMA=athome_family_services_llc`.
 - Gallery manager currently stores image URLs (not uploaded binaries). Use persistent object storage for production uploads if you add file upload support.
+
+## Scheduled Jobs (Vercel Cron)
+
+- `vercel.json` schedules `GET /api/cron/purge-archived` daily at `04:00 UTC`.
+- It permanently deletes leads/subscribers that were soft-archived more than 30 days ago.
+- **Set `CRON_SECRET` in Vercel.** Vercel automatically sends it as `Authorization: Bearer <CRON_SECRET>` on scheduled invocations; the route also accepts an `x-cron-secret: <CRON_SECRET>` header. Without `CRON_SECRET` set, the route falls back to requiring an admin session and the cron will fail with `401`, so the purge never runs.
 
 ## SEO
 
