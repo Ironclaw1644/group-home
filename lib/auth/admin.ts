@@ -93,6 +93,15 @@ export async function verifyAdminPassword(password: string) {
 }
 
 export async function getAdminSession() {
+  // DEMO_MODE: synthetic admin session so /admin and /api/admin/* work without login.
+  // getAdminSession is the shared choke point behind requireAdmin() (pages) and
+  // requireAdminApi() (API routes), so this covers both.
+  if (process.env.DEMO_MODE === '1') {
+    return {
+      email: (process.env.ADMIN_EMAIL?.trim() || 'demo@athomefamilyservices.com').toLowerCase(),
+      exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE_SECONDS
+    };
+  }
   const cookieStore = await cookies();
   const token = cookieStore.get(ADMIN_COOKIE_NAME)?.value;
   return verifyAdminSessionToken(token);

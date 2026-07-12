@@ -9,6 +9,8 @@ import { StructuredData } from '@/components/structured-data';
 import { ActivityTracker } from '@/components/activity-tracker';
 import { buildMetadata, localBusinessJsonLd } from '@/lib/site';
 import { SITE_URL } from '@/lib/utils';
+import { IS_DEMO } from '@/lib/supabase/cmsServer';
+import { DemoTourguide } from '@/components/DemoTourguide';
 
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-sans' });
 const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-display' });
@@ -17,6 +19,14 @@ export const metadata: Metadata = {
   ...buildMetadata({ title: 'At Home Family Services, LLC | Supportive Living in North Chesterfield, VA' }),
   metadataBase: new URL(SITE_URL),
   manifest: '/site.webmanifest',
+  // In demo mode emit noindex/nofollow everywhere. This static metadata export wins
+  // over any header-based directive, so it's the reliable way to keep the throwaway
+  // demo out of search indexes.
+  robots: {
+    index: !IS_DEMO,
+    follow: !IS_DEMO,
+    googleBot: { index: !IS_DEMO, follow: !IS_DEMO }
+  },
   icons: {
     icon: [
       { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
@@ -37,6 +47,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <main>{children}</main>
         <SiteFooter />
         <MobileStickyCTA />
+        {IS_DEMO ? <DemoTourguide /> : null}
       </body>
     </html>
   );

@@ -6,6 +6,10 @@ const CANONICAL_HOST = 'athomefamilyservices.com';
 const REDIRECT_HOSTS = new Set(['group-home.vercel.app', `www.${CANONICAL_HOST}`]);
 
 export function middleware(req: NextRequest) {
+  // DEMO_MODE: skip admin gate AND host canonicalization (the demo lives on its own
+  // *.vercel.app host and must not be redirected to the production domain).
+  if (process.env.DEMO_MODE === '1') return NextResponse.next();
+
   const url = req.nextUrl.clone();
   const hostHeader = req.headers.get('host') ?? req.nextUrl.host;
   const currentHost = hostHeader.split(':')[0].toLowerCase();

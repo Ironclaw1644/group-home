@@ -185,6 +185,9 @@ export type Database = {
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };
+  // DEMO_MODE clone — identical shape, separate schema (see supabase/demo-schema.sql).
+  // Lets .schema('demo_athome') type-check without duplicating table definitions.
+  demo_athome: Database['athome_family_services_llc'];
 };
 
-export type CmsSchemaName = 'athome_family_services_llc';
+export type CmsSchemaName = 'athome_family_services_llc' | 'demo_athome';

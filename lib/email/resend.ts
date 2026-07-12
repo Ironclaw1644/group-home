@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { IS_DEMO } from '@/lib/supabase/cmsServer';
+
 type SendEmailInput = {
   to: string;
   subject: string;
@@ -60,6 +62,17 @@ function stripHtml(input: string) {
 }
 
 export async function sendResendEmail(input: SendEmailInput) {
+  // DEMO_MODE: never call the Resend API. Log what would have been sent and return
+  // a synthetic id so callers (lead notifications, blasts, test sends) behave normally.
+  if (IS_DEMO) {
+    console.log('[DEMO_MODE] Resend email stubbed (not sent):', {
+      to: input.to,
+      from: input.from,
+      subject: input.subject
+    });
+    return { id: `demo_${Date.now()}` } as { id?: string };
+  }
+
   const apiKey = requiredEnv('RESEND_API_KEY');
   const from = normalizeResendFrom(input.from || resolveResendFrom());
   if (!isValidResendFrom(from)) {
