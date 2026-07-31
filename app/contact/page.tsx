@@ -1,16 +1,14 @@
-import { buildMetadata, localBusinessJsonLd } from '@/lib/site';
+import { buildMetadata } from '@/lib/site';
 import { business } from '@/lib/content';
 import { PageHero } from '@/components/page-hero';
 import { LeadForm } from '@/components/lead-form';
 import { Section, Card } from '@/components/ui';
-import { StructuredData } from '@/components/structured-data';
 
 export const metadata = buildMetadata({ title: 'Contact | At Home Family Services, LLC', path: '/contact', description: 'Contact At Home Family Services, LLC by phone, email, or form for supportive living placement and tours.' });
 
 export default function ContactPage() {
   return (
     <>
-      <StructuredData data={localBusinessJsonLd()} />
       <PageHero title="Contact us" description="Call, email, or send a message. We welcome questions from families, support coordinators, and referral partners." breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Contact' }]} />
       <Section title="Get in touch" description="For faster placement conversations, use the placement inquiry form.">
         <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">

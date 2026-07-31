@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 type Slide = {
@@ -68,29 +69,42 @@ export function OurHomeCarousel({ slides }: { slides: readonly Slide[] }) {
           type="button"
           aria-label="Previous slide"
           onClick={() => move(-1)}
-          className="absolute left-3 top-1/2 hidden -translate-y-1/2 rounded-full bg-brand-navy/85 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-navy md:block"
+          disabled={active === 0}
+          className="absolute left-3 top-1/2 hidden -translate-y-1/2 rounded-full bg-brand-navy/85 p-2.5 text-white shadow-lg backdrop-blur transition hover:bg-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:pointer-events-none disabled:opacity-0 md:block"
         >
-          {'<'}
+          <ChevronLeft className="h-5 w-5" aria-hidden="true" />
         </button>
         <button
           type="button"
           aria-label="Next slide"
           onClick={() => move(1)}
-          className="absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-full bg-brand-navy/85 px-3 py-2 text-sm font-semibold text-white transition hover:bg-brand-navy md:block"
+          disabled={active === slides.length - 1}
+          className="absolute right-3 top-1/2 hidden -translate-y-1/2 rounded-full bg-brand-navy/85 p-2.5 text-white shadow-lg backdrop-blur transition hover:bg-brand-navy focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:pointer-events-none disabled:opacity-0 md:block"
         >
-          {'>'}
+          <ChevronRight className="h-5 w-5" aria-hidden="true" />
         </button>
+        <p className="absolute bottom-3 right-3 rounded-full bg-brand-navy/75 px-2.5 py-1 text-xs font-medium text-white backdrop-blur" aria-hidden="true">
+          {active + 1} / {slides.length}
+        </p>
       </div>
 
-      <div className="mt-3 flex items-center justify-center gap-2" aria-label="Carousel pagination">
+      <div className="mt-1 flex items-center justify-center" aria-label="Carousel pagination">
         {slides.map((slide, index) => (
           <button
             key={slide.src}
             type="button"
             aria-label={`Go to slide ${index + 1}`}
+            aria-current={active === index}
             onClick={() => goTo(index)}
-            className={`h-2.5 w-2.5 rounded-full transition ${active === index ? 'bg-brand-teal' : 'bg-brand-navy/20 hover:bg-brand-navy/40'}`}
-          />
+            // Dot is small, but the button keeps a 44px tap target around it.
+            className="group grid h-11 w-8 place-items-center focus-visible:outline-none"
+          >
+            <span
+              className={`h-2.5 rounded-full transition-all group-focus-visible:ring-2 group-focus-visible:ring-brand-teal group-focus-visible:ring-offset-2 ${
+                active === index ? 'w-6 bg-brand-teal' : 'w-2.5 bg-brand-navy/20 group-hover:bg-brand-navy/40'
+              }`}
+            />
+          </button>
         ))}
       </div>
     </div>

@@ -4,7 +4,7 @@ import { dbGet } from '@/lib/storage';
 import { AdminDashboard } from '@/components/admin-dashboard';
 import { buildMetadata } from '@/lib/site';
 
-export const metadata = buildMetadata({ title: 'Admin Dashboard | At Home Family Services, LLC', path: '/admin', description: 'Manage leads, announcements, subscribers, and activity reports.' });
+export const metadata = buildMetadata({ title: 'Admin Dashboard | At Home Family Services, LLC', path: '/admin', description: 'Manage leads, announcements, subscribers, and activity reports.', noIndex: true });
 
 export default async function AdminPage() {
   const session = await requireAdmin();

@@ -1,6 +1,5 @@
 import 'server-only';
 
-import { unstable_noStore as noStore } from 'next/cache';
 import { cmsServerClient } from '@/lib/supabase/cmsServer';
 import type { Announcement } from '@/lib/types';
 
@@ -35,16 +34,23 @@ function mapAnnouncement(row: {
   };
 }
 
+/**
+ * Announcements are supplementary content. A CMS outage or a missing env var
+ * must never take down the page that renders them, so failures degrade to an
+ * empty list instead of throwing.
+ */
 export async function getAnnouncements(options: GetAnnouncementsOptions = {}) {
-  noStore();
+  let data: unknown[] | null = null;
 
-  const supabase = cmsServerClient();
-  const { data, error } = await supabase
-    .from('announcements')
-    .select('*')
-    .order('created_at', { ascending: false });
-
-  if (error) throw new Error(error.message);
+  try {
+    const supabase = cmsServerClient();
+    const result = await supabase.from('announcements').select('*').order('created_at', { ascending: false });
+    if (result.error) throw new Error(result.error.message);
+    data = result.data;
+  } catch (error) {
+    console.error('[announcements] failed to load, rendering without them:', error instanceof Error ? error.message : error);
+    return [];
+  }
 
   const now = new Date();
   const currentPath = options.currentPath;

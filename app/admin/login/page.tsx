@@ -1,7 +1,7 @@
 import { buildMetadata } from '@/lib/site';
 import { AdminLoginForm } from '@/app/admin/login/login-form';
 
-export const metadata = buildMetadata({ title: 'Admin Login | At Home Family Services, LLC', path: '/admin/login', description: 'Secure admin login for At Home Family Services dashboard.' });
+export const metadata = buildMetadata({ title: 'Admin Login | At Home Family Services, LLC', path: '/admin/login', description: 'Secure admin login for At Home Family Services dashboard.', noIndex: true });
 
 export default async function AdminLoginPage({ searchParams }: { searchParams: Promise<{ error?: string; next?: string }> }) {
   const params = await searchParams;

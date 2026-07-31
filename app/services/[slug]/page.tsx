@@ -1,11 +1,12 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { servicePages, serviceSlugs, faqs } from '@/lib/content';
-import { buildMetadata } from '@/lib/site';
+import { servicePages, serviceSlugs, faqs, locationSlugs, locationPages } from '@/lib/content';
+import { buildMetadata, serviceJsonLd } from '@/lib/site';
 import { PageHero } from '@/components/page-hero';
 import { Section, Card, Button } from '@/components/ui';
 import { FaqList } from '@/components/faq-list';
+import { StructuredData } from '@/components/structured-data';
 
 export function generateStaticParams() {
   return serviceSlugs.map((slug) => ({ slug }));
@@ -23,14 +24,11 @@ export default async function ServiceLandingPage({ params }: { params: Promise<{
   const page = servicePages[slug as keyof typeof servicePages];
   if (!page) notFound();
 
-  const detailParagraphs = {
-    0: 'Our team focuses on dependable support, a clean home environment, and consistent routines that help residents feel safe and respected. Families and coordinators can expect clear communication and a collaborative intake process.',
-    1: 'We take a trust-first approach to placement conversations. The initial inquiry helps us understand timeframe, support level, and broad needs, then we schedule follow-up conversations and tours as appropriate.',
-    2: 'Each person’s goals and preferences matter. We work to support independence through daily living skills, structured routines, and individualized support planning that aligns with wellbeing and dignity.'
-  } as const;
+  const otherServices = serviceSlugs.filter((s) => s !== slug);
 
   return (
     <>
+      <StructuredData data={serviceJsonLd({ name: page.title, description: page.summary, path: `/services/${slug}`, areaServed: locationSlugs.map((s) => locationPages[s].linkLabel) })} />
       <PageHero
         title={page.title}
         description={page.summary}
@@ -38,14 +36,16 @@ export default async function ServiceLandingPage({ params }: { params: Promise<{
         actions={<><Button href="/placement-inquiry">Placement Inquiry</Button><Button href="/tour" variant="ghost">Request a Tour</Button></>}
       />
       <Section title="What this service includes" description="We tailor support based on broad needs, goals, and household fit.">
-        <div className="grid gap-4 md:grid-cols-2">
+        {/* items-start so the short "at a glance" card sizes to its content instead of stretching. */}
+        <div className="grid items-start gap-4 md:grid-cols-2">
           <Card>
-            <ul className="space-y-2 text-sm text-brand-slate">{page.bullets.map((b) => <li key={b}>• {b}</li>)}</ul>
+            <h3 className="font-display font-semibold text-brand-navy">At a glance</h3>
+            <ul className="list-check mt-3 text-sm text-brand-slate">{page.bullets.map((b) => <li key={b}>{b}</li>)}</ul>
           </Card>
           <Card>
-            <p className="text-sm leading-7 text-brand-slate">{detailParagraphs[0]}</p>
-            <p className="mt-3 text-sm leading-7 text-brand-slate">{detailParagraphs[1]}</p>
-            <p className="mt-3 text-sm leading-7 text-brand-slate">{detailParagraphs[2]}</p>
+            {page.detail.map((paragraph, index) => (
+              <p key={paragraph} className={index === 0 ? 'text-sm leading-7 text-brand-slate' : 'mt-3 text-sm leading-7 text-brand-slate'}>{paragraph}</p>
+            ))}
           </Card>
         </div>
       </Section>
@@ -59,8 +59,22 @@ export default async function ServiceLandingPage({ params }: { params: Promise<{
           </div>
         </Card>
       </Section>
+      <Section title="Other services we provide" description="Support rarely fits in one category, so most residents draw on several of these at once.">
+        <div className="grid gap-4 sm:grid-cols-2">
+          {otherServices.map((other) => (
+            <Card key={other}>
+              <h3 className="font-display font-semibold text-brand-navy">{servicePages[other].title}</h3>
+              <p className="mt-2 text-sm leading-7 text-brand-slate">{servicePages[other].summary}</p>
+              <Link href={`/services/${other}`} className="mt-3 inline-flex text-sm font-semibold text-brand-teal hover:text-brand-navy">Read about {servicePages[other].linkLabel}</Link>
+            </Card>
+          ))}
+        </div>
+      </Section>
       <Section title="Frequently asked questions">
         <FaqList items={faqs.slice(0, 3)} />
+        <p className="mt-4 text-sm text-brand-slate">
+          More questions are answered on our <Link href="/faq" className="font-semibold text-brand-teal hover:text-brand-navy">FAQ page</Link>, or review <Link href="/requirements" className="font-semibold text-brand-teal hover:text-brand-navy">placement requirements</Link> before you inquire.
+        </p>
       </Section>
     </>
   );

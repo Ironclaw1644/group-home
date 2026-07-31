@@ -5,31 +5,30 @@ import { OurHomeCarousel } from '@/components/our-home-carousel';
 import { Reveal } from '@/components/reveal';
 
 export const metadata = buildMetadata({ title: 'Our Home | At Home Family Services, LLC', path: '/our-home', description: 'View our home amenities, living spaces, and supportive environment in North Chesterfield, VA.' });
-export const dynamic = 'force-dynamic';
 
 const ourHomeSlides = [
   {
-    src: '/images/our-home/AHFS_our_home_house.png',
+    src: '/images/our-home/AHFS_our_home_house.webp',
     alt: 'Exterior of our home'
   },
   {
-    src: '/images/our-home/AHFS_our_home_living_room.png',
+    src: '/images/our-home/AHFS_our_home_living_room.webp',
     alt: 'Comfortable living room'
   },
   {
-    src: '/images/our-home/AHFS_dining_room.png',
+    src: '/images/our-home/AHFS_dining_room.webp',
     alt: 'Dining room'
   },
   {
-    src: '/images/our-home/AHFS_our_home_bed_1.png',
+    src: '/images/our-home/AHFS_our_home_bed_1.webp',
     alt: 'Bedroom with twin beds'
   },
   {
-    src: '/images/our-home/AHFS_our_home_bed_2.png',
+    src: '/images/our-home/AHFS_our_home_bed_2.webp',
     alt: 'Bedroom interior'
   },
   {
-    src: '/images/our-home/AHFS_our_home_bed_3.png',
+    src: '/images/our-home/AHFS_our_home_bed_3.webp',
     alt: 'Bedroom interior'
   }
 ] as const;
@@ -37,7 +36,7 @@ const ourHomeSlides = [
 export default async function OurHomePage() {
   return (
     <>
-      <PageHero title="A comfortable, modern home environment" description="Our home is designed to support daily routines, calm living, and quality of life. Families can request a tour to learn more about the environment and support approach." />
+      <PageHero title="A comfortable, modern home environment" description="Our home is designed to support daily routines, calm living, and quality of life. Families can request a tour to learn more about the environment and support approach." breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Our Home' }]} />
       <Section title="Home amenities" description="Features families often ask about during placement and tour calls.">
         <Reveal>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

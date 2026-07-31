@@ -10,20 +10,25 @@ import { getAnnouncements } from '@/lib/announcements';
 const homeHighlights = [
   {
     id: 'ahfs-home-2',
-    src: '/images/ahfs/AHFS_home_2.png',
+    src: '/images/ahfs/AHFS_home_2.webp',
     alt: 'Caregiver supporting resident'
   },
   {
     id: 'ahfs-home-3',
-    src: '/images/ahfs/AHFS_home_3.png',
+    src: '/images/ahfs/AHFS_home_3.webp',
     alt: 'Care professional meeting with family'
   },
   {
     id: 'ahfs-home-4',
-    src: '/images/ahfs/AHFS_home_4.png',
+    src: '/images/ahfs/AHFS_home_4.webp',
     alt: 'Caregiver and resident walking outdoors'
   }
 ] as const;
+
+// Prerendered and refreshed every 5 minutes rather than rebuilt per request, so
+// the highest-traffic page serves from cache. Admin publishes call
+// revalidatePath('/'), so new announcements still show up immediately.
+export const revalidate = 300;
 
 export default async function HomePage() {
   const announcements = await getAnnouncements({ currentPath: '/', limit: 3 });
@@ -53,6 +58,7 @@ export default async function HomePage() {
               width={1600}
               height={900}
               priority
+              sizes="(max-width: 1024px) 100vw, 60vw"
               className="h-full min-h-[260px] w-full object-cover"
             />
           </div>
@@ -96,7 +102,15 @@ export default async function HomePage() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {homeHighlights.map((img) => (
               <Card key={img.id} className="overflow-hidden p-0">
-                <Image src={img.src} alt={img.alt} width={1000} height={700} className="h-52 w-full object-cover" />
+                <Image
+                  src={img.src}
+                  alt={img.alt}
+                  width={1000}
+                  height={700}
+                  loading="lazy"
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  className="h-52 w-full object-cover"
+                />
               </Card>
             ))}
           </div>

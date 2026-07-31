@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { Manrope, Fraunces } from 'next/font/google';
 import './globals.css';
@@ -10,8 +10,9 @@ import { ActivityTracker } from '@/components/activity-tracker';
 import { buildMetadata, localBusinessJsonLd } from '@/lib/site';
 import { SITE_URL } from '@/lib/utils';
 
-const manrope = Manrope({ subsets: ['latin'], variable: '--font-sans' });
-const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-display' });
+const manrope = Manrope({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
+// Weight axis only — omitting SOFT/WONK/opsz keeps the variable font file small.
+const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-display', display: 'swap' });
 
 export const metadata: Metadata = {
   ...buildMetadata({ title: 'At Home Family Services, LLC | Supportive Living in North Chesterfield, VA' }),
@@ -27,14 +28,32 @@ export const metadata: Metadata = {
   }
 };
 
+export const viewport: Viewport = {
+  themeColor: '#0f2d45',
+  colorScheme: 'light'
+};
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${manrope.variable} ${fraunces.variable}`}>
-      <body className="pb-20 md:pb-0" style={{ fontFamily: 'var(--font-sans)' }}>
+      <head>
+        {/* .reveal starts at opacity 0 and is revealed by JS; without this, a
+            no-JS visitor sees blank sections where real content should be. */}
+        <noscript>
+          <style>{`.reveal{opacity:1!important;transform:none!important}`}</style>
+        </noscript>
+      </head>
+      <body className="font-sans pb-20 md:pb-0">
         <StructuredData data={localBusinessJsonLd()} />
         <ActivityTracker />
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-xl focus:bg-brand-navy focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
+        >
+          Skip to content
+        </a>
         <SiteHeader />
-        <main>{children}</main>
+        <main id="main">{children}</main>
         <SiteFooter />
         <MobileStickyCTA />
       </body>

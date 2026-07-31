@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { business, footerLinks } from '@/lib/content';
+import { business } from '@/lib/content';
+import { SiteLinkHub } from '@/components/site-link-hub';
 
 export function SiteFooter() {
   return (
     <footer className="mt-16 border-t border-brand-navy/10 bg-white/75">
-      <div className="container-shell grid gap-8 py-10 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="container-shell grid gap-8 py-10 sm:grid-cols-2 lg:grid-cols-3">
         <div>
           <div className="flex items-center gap-2 md:gap-2.5">
             <Image
@@ -42,14 +43,6 @@ export function SiteFooter() {
           </ul>
         </div>
         <div>
-          <h3 className="text-sm font-semibold text-brand-navy">Explore</h3>
-          <ul className="mt-2 space-y-1 text-sm text-brand-slate">
-            {footerLinks.map((href) => (
-              <li key={href}><Link href={href} className="hover:text-brand-navy">{href.replace(/\//g, ' ').trim()}</Link></li>
-            ))}
-          </ul>
-        </div>
-        <div>
           <h3 className="text-sm font-semibold text-brand-navy">Action</h3>
           <div className="mt-2 flex flex-col gap-2 text-sm">
             <Link href="/placement-inquiry" data-track-cta="placement-inquiry" className="rounded-xl bg-brand-navy px-4 py-2 text-center font-semibold text-white">Start Placement Inquiry</Link>
@@ -57,6 +50,7 @@ export function SiteFooter() {
           </div>
         </div>
       </div>
+      <SiteLinkHub />
     </footer>
   );
 }

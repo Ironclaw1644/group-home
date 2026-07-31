@@ -1,25 +1,16 @@
 import type { MetadataRoute } from 'next';
-import { locationSlugs, serviceSlugs } from '@/lib/content';
+import { publicPaths } from '@/lib/content';
 import { absoluteUrl } from '@/lib/utils';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const staticPaths = [
-    '/',
-    '/services',
-    '/our-home',
-    '/requirements',
-    '/placement-inquiry',
-    '/placement-inquiry/success',
-    '/tour',
-    '/contact',
-    '/announcements',
-    '/resources',
-    '/faq'
-  ];
+  const lastModified = new Date();
 
-  return [
-    ...staticPaths.map((path) => ({ url: absoluteUrl(path), lastModified: new Date(), changeFrequency: 'weekly' as const, priority: path === '/' ? 1 : 0.7 })),
-    ...serviceSlugs.map((slug) => ({ url: absoluteUrl(`/services/${slug}`), lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.8 })),
-    ...locationSlugs.map((slug) => ({ url: absoluteUrl(`/locations/${slug}`), lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.8 }))
-  ];
+  // publicPaths comes from the site directory rendered on every page, so the
+  // sitemap and the internal link graph always list exactly the same URLs.
+  return publicPaths.map((path) => ({
+    url: absoluteUrl(path),
+    lastModified,
+    changeFrequency: 'weekly' as const,
+    priority: path === '/' ? 1 : path.startsWith('/services/') || path.startsWith('/locations/') ? 0.8 : 0.7
+  }));
 }

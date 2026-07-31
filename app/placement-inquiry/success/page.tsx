@@ -2,7 +2,7 @@ import { buildMetadata } from '@/lib/site';
 import { PageHero } from '@/components/page-hero';
 import { Section, Card, Button } from '@/components/ui';
 
-export const metadata = buildMetadata({ title: 'Placement Inquiry Submitted | At Home Family Services, LLC', path: '/placement-inquiry/success', description: 'Your placement inquiry has been received. We will follow up soon.' });
+export const metadata = buildMetadata({ title: 'Placement Inquiry Submitted | At Home Family Services, LLC', path: '/placement-inquiry/success', description: 'Your placement inquiry has been received. We will follow up soon.', noIndex: true });
 
 export default function PlacementInquirySuccessPage() {
   return (
