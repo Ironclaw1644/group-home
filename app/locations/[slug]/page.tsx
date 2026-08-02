@@ -46,7 +46,7 @@ export default async function LocationLandingPage({ params }: { params: Promise<
             </p>
           </Card>
           <Card>
-            <h3 className="font-display font-semibold text-brand-navy">Nearby areas we commonly support</h3>
+            <h3 className="font-semibold text-brand-navy">Nearby areas we commonly support</h3>
             <ul className="mt-3 space-y-2 text-sm text-brand-slate">
               {nearbySlugs.map((other) => (
                 <li key={other}>
@@ -54,7 +54,7 @@ export default async function LocationLandingPage({ params }: { params: Promise<
                 </li>
               ))}
             </ul>
-            <h3 className="mt-5 font-display font-semibold text-brand-navy">Services available in this area</h3>
+            <h3 className="mt-5 font-semibold text-brand-navy">Services available in this area</h3>
             <ul className="mt-3 space-y-2 text-sm">
               {serviceSlugs.map((service) => (
                 <li key={service}>

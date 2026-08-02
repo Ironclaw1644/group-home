@@ -8,7 +8,7 @@ export function Section({ title, eyebrow, description, children, className }: { 
       <div className="container-shell">
         <div className="mb-6 max-w-3xl">
           {eyebrow ? <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-teal">{eyebrow}</p> : null}
-          <h2 className="font-display text-2xl font-semibold tracking-tight text-brand-navy sm:text-4xl">{title}</h2>
+          <h2 className="text-2xl font-semibold tracking-tight text-brand-navy sm:text-4xl">{title}</h2>
           {description ? <p className="mt-3 text-sm leading-7 text-brand-slate sm:text-base">{description}</p> : null}
         </div>
         {children}

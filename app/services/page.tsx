@@ -16,7 +16,7 @@ export default function ServicesPage() {
             const page = servicePages[slug];
             return (
               <Card key={slug}>
-                <h3 className="font-display text-lg font-semibold text-brand-navy">{page.title}</h3>
+                <h3 className="text-lg font-semibold text-brand-navy">{page.title}</h3>
                 <p className="mt-2 text-sm leading-7 text-brand-slate">{page.summary}</p>
                 <ul className="list-check mt-3 text-sm text-brand-slate">
                   {page.bullets.map((b) => <li key={b}>{b}</li>)}

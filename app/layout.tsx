@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
-import { Manrope, Fraunces } from 'next/font/google';
+import { Manrope } from 'next/font/google';
 import './globals.css';
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
@@ -11,8 +11,6 @@ import { buildMetadata, localBusinessJsonLd } from '@/lib/site';
 import { SITE_URL } from '@/lib/utils';
 
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
-// Weight axis only — omitting SOFT/WONK/opsz keeps the variable font file small.
-const fraunces = Fraunces({ subsets: ['latin'], variable: '--font-display', display: 'swap' });
 
 export const metadata: Metadata = {
   ...buildMetadata({ title: 'At Home Family Services, LLC | Supportive Living in North Chesterfield, VA' }),
@@ -35,7 +33,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${manrope.variable} ${fraunces.variable}`}>
+    <html lang="en" className={manrope.variable}>
       <head>
         {/* .reveal starts at opacity 0 and is revealed by JS; without this, a
             no-JS visitor sees blank sections where real content should be. */}

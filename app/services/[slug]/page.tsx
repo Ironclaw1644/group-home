@@ -39,7 +39,7 @@ export default async function ServiceLandingPage({ params }: { params: Promise<{
         {/* items-start so the short "at a glance" card sizes to its content instead of stretching. */}
         <div className="grid items-start gap-4 md:grid-cols-2">
           <Card>
-            <h3 className="font-display font-semibold text-brand-navy">At a glance</h3>
+            <h3 className="font-semibold text-brand-navy">At a glance</h3>
             <ul className="list-check mt-3 text-sm text-brand-slate">{page.bullets.map((b) => <li key={b}>{b}</li>)}</ul>
           </Card>
           <Card>
@@ -63,7 +63,7 @@ export default async function ServiceLandingPage({ params }: { params: Promise<{
         <div className="grid gap-4 sm:grid-cols-2">
           {otherServices.map((other) => (
             <Card key={other}>
-              <h3 className="font-display font-semibold text-brand-navy">{servicePages[other].title}</h3>
+              <h3 className="font-semibold text-brand-navy">{servicePages[other].title}</h3>
               <p className="mt-2 text-sm leading-7 text-brand-slate">{servicePages[other].summary}</p>
               <Link href={`/services/${other}`} className="mt-3 inline-flex text-sm font-semibold text-brand-teal hover:text-brand-navy">Read about {servicePages[other].linkLabel}</Link>
             </Card>

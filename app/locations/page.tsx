@@ -25,7 +25,7 @@ export default function LocationsPage() {
             const page = locationPages[slug];
             return (
               <Card key={slug}>
-                <h3 className="font-display text-lg font-semibold text-brand-navy">{page.title}</h3>
+                <h3 className="text-lg font-semibold text-brand-navy">{page.title}</h3>
                 <p className="mt-2 text-sm leading-7 text-brand-slate">{page.summary}</p>
                 <p className="mt-3 text-sm text-brand-slate">Nearby: {page.nearby.join(', ')}</p>
                 <Link href={`/locations/${slug}`} className="mt-4 inline-flex text-sm font-semibold text-brand-teal hover:text-brand-navy">
