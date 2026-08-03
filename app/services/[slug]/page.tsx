@@ -16,7 +16,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const page = servicePages[slug as keyof typeof servicePages];
   if (!page) return buildMetadata({ title: 'Service | At Home Family Services, LLC' });
-  return buildMetadata({ title: `${page.title} | At Home Family Services, LLC`, description: page.summary, path: `/services/${slug}` });
+  // metaTitle leads with search vocabulary and skips the brand suffix, which was
+  // pushing the distinguishing words past Google's ~60-character truncation.
+  return buildMetadata({ title: page.metaTitle, description: page.metaDescription, path: `/services/${slug}` });
 }
 
 export default async function ServiceLandingPage({ params }: { params: Promise<{ slug: string }> }) {

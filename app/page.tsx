@@ -33,7 +33,7 @@ export const revalidate = 300;
 export default async function HomePage() {
   const announcements = await getAnnouncements({ currentPath: '/', limit: 3 });
   const heroTitle = 'A warm, supportive home built on dignity, trust, and daily care.';
-  const heroSubtitle = '24/7 supportive living services for adults with developmental disabilities in North Chesterfield, Virginia.';
+  const heroSubtitle = 'Residential disability services and 24/7 supportive living for adults with developmental disabilities in North Chesterfield, Virginia.';
   const heroCta = 'Start a Placement Inquiry';
   return (
     <>

@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const page = locationPages[slug as keyof typeof locationPages];
   if (!page) return buildMetadata({ title: 'Location | At Home Family Services, LLC' });
-  return buildMetadata({ title: `${page.title} | At Home Family Services, LLC`, description: page.summary, path: `/locations/${slug}` });
+  return buildMetadata({ title: page.metaTitle, description: page.metaDescription, path: `/locations/${slug}` });
 }
 
 export default async function LocationLandingPage({ params }: { params: Promise<{ slug: string }> }) {

@@ -4,7 +4,7 @@ import { PageHero } from '@/components/page-hero';
 import { Section, Card, Button } from '@/components/ui';
 import { servicePages, serviceSlugs } from '@/lib/content';
 
-export const metadata = buildMetadata({ title: 'Services | At Home Family Services, LLC', path: '/services', description: 'Explore supportive living, placement support, life skills training, community outings, and individualized support planning.' });
+export const metadata = buildMetadata({ title: 'Disability Services for Adults in North Chesterfield, VA', path: '/services', description: 'Residential disability services for adults 18+ with intellectual and developmental disabilities: 24/7 supportive living, life skills, and community outings.' });
 
 export default function ServicesPage() {
   return (

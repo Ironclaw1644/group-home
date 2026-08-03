@@ -2,7 +2,7 @@ import { buildMetadata } from '@/lib/site';
 import { PageHero } from '@/components/page-hero';
 import { Section, Card, Button } from '@/components/ui';
 
-export const metadata = buildMetadata({ title: 'Requirements | At Home Family Services, LLC', path: '/requirements', description: 'Review broad placement requirements and next steps before requesting a tour or placement inquiry.' });
+export const metadata = buildMetadata({ title: 'Group Home Placement Requirements | Adults 18+ in VA', path: '/requirements', description: 'Who qualifies: adults 18+ with a developmental disability and acceptable coverage. Medicaid waiver, private pay, and other options reviewed on a screening call.' });
 
 export default function RequirementsPage() {
   return (

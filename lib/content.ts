@@ -47,6 +47,8 @@ export const locationSlugs = [
 export const servicePages = {
   'supportive-living-id-dd': {
     title: 'Supportive Living for Adults with ID/DD',
+    metaTitle: '24/7 Supportive Living for Adults with ID/DD | VA',
+    metaDescription: 'Round-the-clock residential support in a structured home: consistent staff, daily routines, medication coordination, and regular family contact.',
     linkLabel: 'Supportive Living for Adults',
     summary: '24/7 supportive living in a warm, structured home environment focused on dignity, independence, and wellbeing.',
     bullets: ['24/7 staff support', 'Daily routines and life skills', 'Medication support coordination', 'Family communication'],
@@ -58,6 +60,8 @@ export const servicePages = {
   },
   'group-home-adults-id-dd': {
     title: 'Group Home Placement for Adults with ID/DD',
+    metaTitle: 'Group Home Placement for Adults with Disabilities | VA',
+    metaDescription: 'Placement guidance, tours, intake coordination, and transition planning for families and support coordinators comparing adult group homes in the Richmond area.',
     linkLabel: 'Group Home Placement',
     summary: 'Placement support for families and coordinators seeking a safe, nurturing residential setting with consistent care.',
     bullets: ['Placement guidance', 'Tour scheduling', 'Intake coordination', 'Transition planning support'],
@@ -69,6 +73,8 @@ export const servicePages = {
   },
   'life-skills-training': {
     title: 'Life Skills Training',
+    metaTitle: 'Life Skills Training for Adults with Disabilities | VA',
+    metaDescription: 'Hands-on daily-living support that builds independence: meal prep, personal care routines, home organization, and community readiness.',
     linkLabel: 'Life Skills Training',
     summary: 'Hands-on support for everyday routines that build confidence and long-term independence.',
     bullets: ['Meal prep basics', 'Personal care routines', 'Home organization', 'Community readiness'],
@@ -80,6 +86,8 @@ export const servicePages = {
   },
   'community-outings': {
     title: 'Community Outings & Engagement',
+    metaTitle: 'Community Outings & Engagement for Adults with ID/DD | VA',
+    metaDescription: 'Recreation, appointments, and social engagement planned around each resident’s interests, safety, and support level.',
     linkLabel: 'Community Outings',
     summary: 'Meaningful community participation planned around safety, interests, and social growth.',
     bullets: ['Recreation outings', 'Appointments support', 'Social engagement', 'Structured schedules'],
@@ -91,6 +99,8 @@ export const servicePages = {
   },
   'individualized-support-plans': {
     title: 'Individualized Support Plans',
+    metaTitle: 'Individualized Support Plans for Adults with ID/DD | VA',
+    metaDescription: 'Personalized support planning with goal tracking, adjustable support levels, and collaboration with families and case teams.',
     linkLabel: 'Individualized Support Plans',
     summary: 'Personalized support planning aligned with each resident’s needs, goals, and level of assistance.',
     bullets: ['Goal tracking', 'Support level adjustments', 'Family/case team collaboration', 'Documentation support'],
@@ -105,6 +115,8 @@ export const servicePages = {
 export const locationPages = {
   'north-chesterfield-va': {
     title: 'Supportive Living in North Chesterfield, VA',
+    metaTitle: 'Adult Group Home in North Chesterfield, VA | Book a Tour',
+    metaDescription: 'Residential disability services for adults 18+ with developmental disabilities on Clovis St., North Chesterfield. Tours welcome — call (804) 919-3030.',
     linkLabel: 'North Chesterfield, VA',
     summary: 'Local placement and tour support for families seeking adult ID/DD residential care in North Chesterfield.',
     nearby: ['Chesterfield County', 'Richmond', 'Midlothian'],
@@ -115,6 +127,8 @@ export const locationPages = {
   },
   'chesterfield-county-va': {
     title: 'Adult Group Home Services in Chesterfield County, VA',
+    metaTitle: 'Disability Services for Adults | Chesterfield County, VA',
+    metaDescription: 'Group home placement and supportive living for adults 18+ with intellectual and developmental disabilities across Chesterfield County. Ask about availability.',
     linkLabel: 'Chesterfield County, VA',
     summary: 'Residential supportive living for adults 18+ with developmental disabilities in Chesterfield County.',
     nearby: ['North Chesterfield', 'Midlothian', 'Colonial Heights'],
@@ -125,6 +139,8 @@ export const locationPages = {
   },
   'richmond-va': {
     title: 'Residential Placement Support Near Richmond, VA',
+    metaTitle: 'Disability Services & Group Home Placement | Richmond, VA',
+    metaDescription: 'Residential disability services for adults 18+ at our North Chesterfield home, a short drive from Richmond. Phone or in-person tours available.',
     linkLabel: 'Richmond, VA',
     summary: 'Families in Richmond can request tours and placement guidance for our supportive living home nearby.',
     nearby: ['North Chesterfield', 'Chesterfield County', 'Colonial Heights'],
@@ -135,6 +151,8 @@ export const locationPages = {
   },
   'midlothian-va': {
     title: 'Supportive Living Options Near Midlothian, VA',
+    metaTitle: 'Disability Services for Adults Near Midlothian, VA',
+    metaDescription: 'Supportive living and group home placement for adults with developmental disabilities, a short drive from Midlothian. Start with a phone tour.',
     linkLabel: 'Midlothian, VA',
     summary: 'Explore a warm, structured home environment with trained support professionals and individualized care.',
     nearby: ['Chesterfield County', 'North Chesterfield', 'Richmond'],
@@ -145,6 +163,8 @@ export const locationPages = {
   },
   'colonial-heights-va': {
     title: 'Adult ID/DD Group Home Placement Near Colonial Heights, VA',
+    metaTitle: 'Adult Disability Services Near Colonial Heights, VA',
+    metaDescription: 'Residential placement for adults 18+ with developmental disabilities within reach of Colonial Heights. One screening call covers fit and coverage.',
     linkLabel: 'Colonial Heights, VA',
     summary: 'Placement inquiries and tour requests for supportive living within reach of Colonial Heights families.',
     nearby: ['Chesterfield County', 'North Chesterfield', 'Richmond'],

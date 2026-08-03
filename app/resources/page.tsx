@@ -3,7 +3,7 @@ import { buildMetadata } from '@/lib/site';
 import { PageHero } from '@/components/page-hero';
 import { Section, Card, Button } from '@/components/ui';
 
-export const metadata = buildMetadata({ title: 'Resources | At Home Family Services, LLC', path: '/resources', description: 'Helpful guidance for families and coordinators: what to expect, placement process, and tour checklist.' });
+export const metadata = buildMetadata({ title: 'Placement Guide for Families & Support Coordinators | VA', path: '/resources', description: 'What to expect when placing an adult with a developmental disability: the four-step placement process, a tour checklist, and what to share in a first inquiry.' });
 
 export default function ResourcesPage() {
   return (

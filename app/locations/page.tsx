@@ -5,7 +5,7 @@ import { Section, Card, Button } from '@/components/ui';
 import { locationPages, locationSlugs } from '@/lib/content';
 
 export const metadata = buildMetadata({
-  title: 'Service Areas | At Home Family Services, LLC',
+  title: 'Disability Services Near You | Richmond Region, VA',
   path: '/locations',
   description: 'Supportive living and group home placement for adults with ID/DD across North Chesterfield, Chesterfield County, Richmond, Midlothian, and Colonial Heights, VA.'
 });

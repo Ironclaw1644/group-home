@@ -4,7 +4,7 @@ import { PageHero } from '@/components/page-hero';
 import { LeadForm } from '@/components/lead-form';
 import { Section, Card } from '@/components/ui';
 
-export const metadata = buildMetadata({ title: 'Contact | At Home Family Services, LLC', path: '/contact', description: 'Contact At Home Family Services, LLC by phone, email, or form for supportive living placement and tours.' });
+export const metadata = buildMetadata({ title: 'Contact At Home Family Services | North Chesterfield, VA', path: '/contact', description: 'Call (804) 919-3030, email, or send a message about disability services and group home placement for adults 18+ in the Richmond area.' });
 
 export default function ContactPage() {
   return (

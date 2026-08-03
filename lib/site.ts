@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { business } from '@/lib/content';
 import { absoluteUrl } from '@/lib/utils';
 
-export const defaultDescription = 'Warm, supportive living services for adults with developmental disabilities in North Chesterfield, VA. Placement inquiries, tours, and family-centered care.';
+export const defaultDescription = 'Residential disability services for adults 18+ with developmental disabilities in North Chesterfield, VA. 24/7 supportive living. Call (804) 919-3030.';
 
 export function buildMetadata({ title, description, path = '/', noIndex = false }: { title: string; description?: string; path?: string; noIndex?: boolean }): Metadata {
   const desc = description || defaultDescription;

@@ -5,7 +5,7 @@ import { Section, Card } from '@/components/ui';
 import { AnnouncementList } from '@/components/announcement-list';
 import { getAnnouncements } from '@/lib/announcements';
 
-export const metadata = buildMetadata({ title: 'Announcements | At Home Family Services, LLC', path: '/announcements', description: 'Public updates, scheduling notices, and availability announcements from At Home Family Services.' });
+export const metadata = buildMetadata({ title: 'Openings & Announcements | At Home Family Services, VA', path: '/announcements', description: 'Current availability, tour scheduling notices, and other updates from our North Chesterfield group home.' });
 // Rendered ahead of time and refreshed on a 5-minute cycle. Publishing from the
 // admin calls revalidatePath('/announcements'), so edits still appear at once.
 export const revalidate = 300;

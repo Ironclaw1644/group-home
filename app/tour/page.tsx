@@ -3,7 +3,7 @@ import { PageHero } from '@/components/page-hero';
 import { LeadForm } from '@/components/lead-form';
 import { Section } from '@/components/ui';
 
-export const metadata = buildMetadata({ title: 'Request a Tour | At Home Family Services, LLC', path: '/tour', description: 'Request an in-person or phone tour and share your preferred dates/times.' });
+export const metadata = buildMetadata({ title: 'Request a Tour | Group Home in North Chesterfield, VA', path: '/tour', description: 'Book an in-person or phone tour of our North Chesterfield group home. Share a few preferred times and we will follow up to confirm.' });
 
 export default function TourPage() {
   return (

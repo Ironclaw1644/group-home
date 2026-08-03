@@ -13,7 +13,7 @@ import { SITE_URL } from '@/lib/utils';
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-sans', display: 'swap' });
 
 export const metadata: Metadata = {
-  ...buildMetadata({ title: 'At Home Family Services, LLC | Supportive Living in North Chesterfield, VA' }),
+  ...buildMetadata({ title: 'Disability Services & Adult Group Home | N. Chesterfield VA' }),
   metadataBase: new URL(SITE_URL),
   manifest: '/site.webmanifest',
   icons: {

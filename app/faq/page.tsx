@@ -6,7 +6,7 @@ import { FaqList } from '@/components/faq-list';
 import { StructuredData } from '@/components/structured-data';
 import { faqs } from '@/lib/content';
 
-export const metadata = buildMetadata({ title: 'FAQ | At Home Family Services, LLC', path: '/faq', description: 'Common questions about eligibility, tours, placement timing, and supportive living services.' });
+export const metadata = buildMetadata({ title: 'Group Home FAQ | Eligibility, Tours & Coverage in VA', path: '/faq', description: 'Answers on who is eligible, what care we do and do not provide, how quickly a tour can be arranged, and what to include in a first placement inquiry.' });
 
 export default function FaqPage() {
   return (

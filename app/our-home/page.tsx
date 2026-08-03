@@ -4,7 +4,7 @@ import { Section, Card, Button } from '@/components/ui';
 import { OurHomeCarousel } from '@/components/our-home-carousel';
 import { Reveal } from '@/components/reveal';
 
-export const metadata = buildMetadata({ title: 'Our Home | At Home Family Services, LLC', path: '/our-home', description: 'View our home amenities, living spaces, and supportive environment in North Chesterfield, VA.' });
+export const metadata = buildMetadata({ title: 'See Our Group Home in North Chesterfield, VA | Photos', path: '/our-home', description: 'Photos of the living spaces, bedrooms, and outdoor area of our North Chesterfield group home for adults with developmental disabilities. Tours available.' });
 
 const ourHomeSlides = [
   {

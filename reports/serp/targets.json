@@ -1,0 +1,31 @@
+{
+  "note": "Keywords we intend to rank for. 'observed' marks phrasing that already appeared in a Search Console export. Anything without observed data is a gap we are writing toward, not a claim that we rank. Keep claims truthful: we provide residential supportive living for adults 18+ with developmental disabilities. We are not a day-support program, not a senior-care provider, and we do not claim to be an enrolled DD waiver provider.",
+  "targets": [
+    { "query": "disability services chesterfield va", "page": "/locations/chesterfield-county-va", "priority": "high", "observed": true },
+    { "query": "disability services in chesterfield", "page": "/locations/chesterfield-county-va", "priority": "high", "observed": true },
+    { "query": "disability services midlothian va", "page": "/locations/midlothian-va", "priority": "high", "observed": true },
+    { "query": "disability services richmond va", "page": "/locations/richmond-va", "priority": "high", "observed": false },
+    { "query": "disability services north chesterfield va", "page": "/locations/north-chesterfield-va", "priority": "high", "observed": false },
+
+    { "query": "residential living solutions for adults with disabilities in chester", "page": "/services/supportive-living-id-dd", "priority": "high", "observed": true },
+    { "query": "residential services for adults with disabilities richmond va", "page": "/services/supportive-living-id-dd", "priority": "high", "observed": false },
+    { "query": "group home for adults with disabilities chesterfield va", "page": "/services/group-home-adults-id-dd", "priority": "high", "observed": false },
+    { "query": "group home for adults with intellectual disabilities richmond va", "page": "/services/group-home-adults-id-dd", "priority": "medium", "observed": false },
+    { "query": "adult group home north chesterfield va", "page": "/locations/north-chesterfield-va", "priority": "high", "observed": false },
+
+    { "query": "dd waiver providers chesterfield county", "page": "/requirements", "priority": "medium", "observed": true },
+    { "query": "medicaid waiver group home virginia", "page": "/requirements", "priority": "medium", "observed": false },
+
+    { "query": "supportive living north chesterfield va", "page": "/", "priority": "medium", "observed": false },
+    { "query": "at home family services", "page": "/", "priority": "brand", "observed": false },
+    { "query": "at home services llc", "page": "/", "priority": "brand", "observed": true }
+  ],
+  "excluded": [
+    { "query": "group day support chesterfield", "reason": "We are residential supportive living, not a day-support program. Ranking for this would draw the wrong enquiries." },
+    { "query": "senior home placement services richmond", "reason": "We serve adults 18+ with developmental disabilities, not senior care." },
+    { "query": "home based support services crestview", "reason": "Wrong geography (not Virginia)." },
+    { "query": "home based support services seville", "reason": "Wrong geography." },
+    { "query": "home community support services milton", "reason": "Wrong geography." },
+    { "query": "family life services llc", "reason": "A different business." }
+  ]
+}
