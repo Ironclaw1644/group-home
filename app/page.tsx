@@ -121,6 +121,27 @@ export default async function HomePage() {
         </div>
       </Section>
 
+      <Section title="Who we support" description="Adults 18+ with intellectual and developmental disabilities, in a shared residential home.">
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card>
+            <p className="text-sm leading-7 text-brand-slate">
+              We are a small residential home rather than a large facility, which shapes almost everything about how support works here. Residents see the same staff regularly, know the people they live with, and follow routines built around them individually rather than around a building-wide schedule.
+            </p>
+            <p className="mt-3 text-sm leading-7 text-brand-slate">
+              Support is documented in an <Link href="/services/individualized-support-plans" className="font-semibold text-brand-teal hover:text-brand-navy">individualized support plan</Link> and adjusted as circumstances change, so the level of help someone receives reflects where they are now rather than where they were at intake.
+            </p>
+          </Card>
+          <Card>
+            <p className="text-sm leading-7 text-brand-slate">
+              Families and support coordinators are part of the picture throughout. We are used to working alongside case teams, being one of several homes under consideration, and being straightforward when our environment is not the right fit for the support level being described.
+            </p>
+            <p className="mt-3 text-sm leading-7 text-brand-slate">
+              Check <Link href="/requirements" className="font-semibold text-brand-teal hover:text-brand-navy">placement requirements</Link> for eligibility and coverage, or read how the <Link href="/resources" className="font-semibold text-brand-teal hover:text-brand-navy">placement process</Link> works from first inquiry through move-in.
+            </p>
+          </Card>
+        </div>
+      </Section>
+
       <Section title="Current announcements" description="Updates about tours, openings, and scheduling.">
         <Reveal>
           <AnnouncementList announcements={announcements} />

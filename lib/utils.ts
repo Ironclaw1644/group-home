@@ -12,7 +12,11 @@ export function siteUrl() {
 
 export function absoluteUrl(path = '/') {
   const base = siteUrl();
-  return path.startsWith('http') ? path : `${base}${path}`;
+  if (path.startsWith('http')) return path;
+  // Next renders the home canonical as the bare origin, so emit the same form
+  // here — otherwise the sitemap advertises a URL the page does not self-canonical to.
+  if (path === '/') return base;
+  return `${base}${path}`;
 }
 
 export function slugToTitle(slug: string) {

@@ -219,6 +219,27 @@ export const siteDirectory: SiteLinkGroup[] = [
 /** Canonical list of indexable paths, derived from the directory so the sitemap can never drift from the nav. */
 export const publicPaths = siteDirectory.flatMap((group) => group.links.map((link) => link.href));
 
+/**
+ * When each page's content genuinely last changed, for sitemap lastmod.
+ * Bump the specific entry when you edit that page's copy. Do NOT wire this to
+ * the build date: a lastmod that moves on every deploy is one Google stops
+ * trusting, and this site needs that crawl signal to be credible.
+ */
+export const contentUpdatedAt: Record<string, string> = {
+  default: '2026-08-03',
+  '/': '2026-08-03',
+  '/services': '2026-08-03',
+  '/our-home': '2026-08-03',
+  '/requirements': '2026-08-03',
+  '/resources': '2026-08-03',
+  '/faq': '2026-08-03',
+  '/announcements': '2026-08-03',
+  '/contact': '2026-08-03',
+  '/locations': '2026-08-03',
+  '/placement-inquiry': '2026-08-03',
+  '/tour': '2026-08-03'
+};
+
 export const faqs = [
   {
     q: 'Who is eligible for placement?',
@@ -235,6 +256,34 @@ export const faqs = [
   {
     q: 'What should families share in the first inquiry?',
     a: 'Start with basic contact information, timeframe, broad support needs, and coverage type. Please do not submit private medical details through the form.'
+  },
+  {
+    q: 'What is supportive living, and how is it different from a nursing home?',
+    a: 'Supportive living is a residential home where adults live with staff support available around the clock. The focus is on daily life — routines, meals, life skills, and community participation — rather than clinical or skilled nursing care. Medical and clinical services are coordinated with the licensed providers already involved in a resident’s care.'
+  },
+  {
+    q: 'What does a typical day look like?',
+    a: 'Days follow a predictable rhythm: morning routines and personal care support, meals together, time for activities or community outings, and quiet time in the evening. Predictability lowers stress for many residents, and it helps staff notice quickly when something has changed.'
+  },
+  {
+    q: 'Can families and support coordinators visit?',
+    a: 'Yes. We expect families to stay involved and we are used to working alongside case teams and support coordinators. Visits are arranged with us in advance so they fit the household routine and respect the privacy of everyone living in the home.'
+  },
+  {
+    q: 'Do you work with support coordinators and case managers?',
+    a: 'Regularly. Coordinators are welcome on tour calls and in placement conversations, and we are comfortable being one of several homes a team is comparing. We would rather be honest early about whether our environment fits the support level being described than push a placement that will not work.'
+  },
+  {
+    q: 'Which areas do you serve?',
+    a: 'Our home is in North Chesterfield, Virginia, and we work with families and coordinators across Chesterfield County, Richmond, Midlothian, and Colonial Heights. Placement is at our North Chesterfield home regardless of which area an inquiry comes from.'
+  },
+  {
+    q: 'What happens after we submit a placement inquiry?',
+    a: 'We review the inquiry, then contact you for a screening call to talk through timeframe, support level, and coverage. If it looks like a fit, we arrange a tour by phone or in person. After that, intake coordination and transition planning cover move-in details and who needs to be kept informed.'
+  },
+  {
+    q: 'How is coverage handled?',
+    a: 'Acceptable insurance or coverage is required. Medicaid waiver, private pay, and other arrangements can be discussed, and final verification happens during intake screening rather than through the website. Please raise coverage questions on the screening call so we can give you an accurate answer.'
   }
 ];
 

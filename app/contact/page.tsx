@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { buildMetadata } from '@/lib/site';
 import { business } from '@/lib/content';
 import { PageHero } from '@/components/page-hero';
@@ -35,6 +36,41 @@ export default function ContactPage() {
             ]}
           />
         </div>
+      </Section>
+
+      <Section title="Which route is fastest" description="All three reach us. They just suit different questions.">
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card>
+            <h3 className="font-semibold text-brand-navy">Call</h3>
+            <p className="mt-3 text-sm leading-7 text-brand-slate">
+              Best for anything time-sensitive, and for questions about coverage or support levels that are hard to answer in writing. If we cannot pick up, leave a message with a good time to call back.
+            </p>
+          </Card>
+          <Card>
+            <h3 className="font-semibold text-brand-navy">Placement inquiry form</h3>
+            <p className="mt-3 text-sm leading-7 text-brand-slate">
+              The fastest route if you are actively seeking a placement. It captures timeframe, support level, and coverage up front, so our first call with you starts from real information rather than basics.
+            </p>
+            <Link href="/placement-inquiry" className="mt-3 inline-flex text-sm font-semibold text-brand-teal hover:text-brand-navy">Start an inquiry</Link>
+          </Card>
+          <Card>
+            <h3 className="font-semibold text-brand-navy">This contact form</h3>
+            <p className="mt-3 text-sm leading-7 text-brand-slate">
+              For general questions, referral partners, and anything that is not yet a placement request. Please keep private medical details out of online forms — we will cover specifics by phone.
+            </p>
+          </Card>
+        </div>
+      </Section>
+
+      <Section title="Before you get in touch" description="A few things that make the first conversation more useful.">
+        <Card>
+          <p className="text-sm leading-7 text-brand-slate">
+            It helps to know roughly when a placement is needed, the broad level of daily support involved, and what coverage is likely — Medicaid waiver, private pay, or something still being worked out. None of that has to be exact. Approximate answers are enough to tell whether a tour is worth anyone’s time.
+          </p>
+          <p className="mt-3 text-sm leading-7 text-brand-slate">
+            If you are still gathering information, our <Link href="/faq" className="font-semibold text-brand-teal hover:text-brand-navy">FAQ</Link> and <Link href="/resources" className="font-semibold text-brand-teal hover:text-brand-navy">family resources</Link> cover most of what families ask first, and <Link href="/requirements" className="font-semibold text-brand-teal hover:text-brand-navy">placement requirements</Link> sets out who we can and cannot support.
+          </p>
+        </Card>
       </Section>
     </>
   );
