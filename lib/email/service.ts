@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { SITE_URL } from '@/lib/utils';
+import { business } from '@/lib/content';
 import type { LocalLead } from '@/lib/types';
 import {
   createEmailCampaign,
@@ -40,12 +41,14 @@ function adminNotificationRecipients() {
 }
 
 function replyToRecipient() {
+  // Falls back to the address the site publishes, so the contact email lives in
+  // exactly one place (business.email in lib/content.ts) rather than three.
   const raw = process.env.RESEND_REPLY_TO?.trim();
-  if (!raw) return 'Athomefamilyservice@yahoo.com';
+  if (!raw) return business.email;
   return raw
     .split(',')
     .map((item) => item.trim())
-    .filter(Boolean)[0] || 'Athomefamilyservice@yahoo.com';
+    .filter(Boolean)[0] || business.email;
 }
 
 function unsubscribeUrl(email: string) {
