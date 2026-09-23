@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { business } from '@/lib/content';
 import { SiteLinkHub } from '@/components/site-link-hub';
+import { LuziqCredit } from '@/components/luziq-credit';
 
 export function SiteFooter() {
   return (
@@ -51,6 +52,7 @@ export function SiteFooter() {
         </div>
       </div>
       <SiteLinkHub />
+      <LuziqCredit />
     </footer>
   );
 }
