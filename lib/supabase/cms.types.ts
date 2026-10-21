@@ -179,6 +179,35 @@ export type Database = {
         Update: Partial<Database['athome_family_services_llc']['Tables']['activity_events']['Row']>;
         Relationships: [];
       };
+      serp_snapshots: {
+        Row: {
+          id: number;
+          query: string;
+          position: number | null;
+          page: string | null;
+          captured_on: string;
+          source: string;
+          created_at: string;
+        };
+        Insert: Partial<Database['athome_family_services_llc']['Tables']['serp_snapshots']['Row']> & { query: string };
+        Update: Partial<Database['athome_family_services_llc']['Tables']['serp_snapshots']['Row']>;
+        Relationships: [];
+      };
+      serp_runs: {
+        Row: {
+          id: number;
+          started_at: string;
+          finished_at: string | null;
+          status: string;
+          apify_run_id: string | null;
+          queries: number;
+          ranking: number | null;
+          error: string | null;
+        };
+        Insert: Partial<Database['athome_family_services_llc']['Tables']['serp_runs']['Row']>;
+        Update: Partial<Database['athome_family_services_llc']['Tables']['serp_runs']['Row']>;
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

@@ -1,5 +1,19 @@
 # SERP tracking
 
+## Automated weekly rank check (from 2026-10-21)
+
+`/api/cron/serp-sync` runs every Tuesday 09:00 UTC (vercel.json). It scrapes a
+Chesterfield, VA-localised Google SERP, top 20, for the 12 keywords in
+`lib/seo/serp-parse.ts` via Apify `apify~google-search-scraper`, and writes one
+row per keyword to `athome_family_services_llc.serp_snapshots` (position null =
+not in the top 20). Every run, including failures and their reason, is logged in
+`serp_runs`. The admin Activity tab shows now / last week / best. Needs
+`APIFY_API_KEY` and `CRON_SECRET` in Vercel. Cost is about $0.11 per run on the
+shared Apify credit, so keep the list at 12.
+
+The Search Console export flow below still works and is the only source of
+clicks and impressions.
+
 ## Usage
 
 ```bash
