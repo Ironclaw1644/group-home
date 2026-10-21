@@ -4,7 +4,7 @@ import { PageHero } from '@/components/page-hero';
 import { LeadForm } from '@/components/lead-form';
 import { Section, Card } from '@/components/ui';
 
-export const metadata = buildMetadata({ title: 'Start a Placement Inquiry | Adult Group Home, VA', path: '/placement-inquiry', description: 'Tell us the timeframe, support level, and coverage type and we will follow up about availability at our North Chesterfield home. No private medical details needed.' });
+export const metadata = buildMetadata({ title: 'Start a Placement Inquiry | Adult Group Home, VA', path: '/placement-inquiry', description: 'Tell us the timeframe, support level, and coverage type and we will follow up about availability at our North Chesterfield home. No medical details needed.' });
 
 export default function PlacementInquiryPage() {
   return (

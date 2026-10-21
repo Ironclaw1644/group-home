@@ -2,6 +2,10 @@ import Link from 'next/link';
 import { buildMetadata } from '@/lib/site';
 import { PageHero } from '@/components/page-hero';
 import { Section, Card, Button } from '@/components/ui';
+import { FaqList } from '@/components/faq-list';
+import { faqs } from '@/lib/content';
+
+const coverageQuestions = faqs.filter((item) => /cost|DD waiver|coverage handled/i.test(item.q));
 
 export const metadata = buildMetadata({ title: 'Group Home Placement Requirements | Adults 18+ in VA', path: '/requirements', description: 'Who qualifies: adults 18+ with a developmental disability and acceptable coverage. Medicaid waiver, private pay, and other options reviewed on a screening call.' });
 
@@ -10,6 +14,9 @@ export default function RequirementsPage() {
     <>
       <PageHero title="Placement requirements" description="We review each inquiry individually. These broad requirements help families and coordinators determine whether to start the placement process." breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Requirements' }]} />
       <Section title="General requirements" description="Please contact us for a screening call to confirm fit and availability.">
+        <p className="mb-6 max-w-3xl text-base leading-8 text-brand-navy">
+          To live at At Home Family Services in North Chesterfield, VA, a person must be an adult 18 or older with a developmental disorder diagnosis, have support needs our home can meet, and have acceptable insurance or coverage. Medicaid waiver, private pay, and other arrangements can be discussed, and everything is confirmed on a screening call.
+        </p>
         <div className="grid gap-4 md:grid-cols-2">
           <Card><h3 className="font-semibold text-brand-navy">Eligibility</h3><ul className="list-check mt-3 text-sm text-brand-slate"><li>Adult age 18+</li><li>Developmental disorder diagnosis</li><li>Support needs appropriate for our home environment</li></ul></Card>
           <Card><h3 className="font-semibold text-brand-navy">Coverage</h3><ul className="list-check mt-3 text-sm text-brand-slate"><li>Acceptable insurance/coverage required</li><li>Medicaid waiver, private pay, or other options may be discussed</li><li>Final verification occurs during intake screening</li></ul></Card>
@@ -38,6 +45,11 @@ export default function RequirementsPage() {
             </p>
           </Card>
         </div>
+      </Section>
+
+      <Section title="Coverage and waiver questions" description="How cost and Virginia’s DD waivers fit into placement.">
+        {/* FAQPage markup for these lives on /faq. */}
+        <FaqList items={coverageQuestions} />
       </Section>
 
       <Section title="What we do and do not provide" description="Worth being clear on before you invest time in a tour.">

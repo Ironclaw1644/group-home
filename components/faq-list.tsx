@@ -1,6 +1,8 @@
 import { ChevronDown } from 'lucide-react';
 
-export function FaqList({ items }: { items: { q: string; a: string }[] }) {
+import type { FaqItem } from '@/lib/content';
+
+export function FaqList({ items }: { items: readonly FaqItem[] }) {
   return (
     <div className="space-y-3">
       {items.map((item) => (
@@ -16,6 +18,14 @@ export function FaqList({ items }: { items: { q: string; a: string }[] }) {
             />
           </summary>
           <p className="mt-2 text-sm leading-7 text-brand-slate">{item.a}</p>
+          {item.source ? (
+            <p className="mt-2 text-xs text-brand-slate">
+              Source:{' '}
+              <a href={item.source.url} className="font-semibold text-brand-teal hover:text-brand-navy" rel="noopener" target="_blank">
+                {item.source.label}
+              </a>
+            </p>
+          ) : null}
         </details>
       ))}
     </div>

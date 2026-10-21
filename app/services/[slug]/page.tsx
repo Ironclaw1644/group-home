@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { servicePages, serviceSlugs, faqs, locationSlugs, locationPages } from '@/lib/content';
-import { buildMetadata, serviceJsonLd } from '@/lib/site';
+import { buildMetadata, serviceJsonLd, faqJsonLd } from '@/lib/site';
 import { PageHero } from '@/components/page-hero';
 import { Section, Card, Button } from '@/components/ui';
 import { FaqList } from '@/components/faq-list';
@@ -30,7 +30,8 @@ export default async function ServiceLandingPage({ params }: { params: Promise<{
 
   return (
     <>
-      <StructuredData data={serviceJsonLd({ name: page.title, description: page.summary, path: `/services/${slug}`, areaServed: locationSlugs.map((s) => locationPages[s].linkLabel) })} />
+      <StructuredData data={faqJsonLd(page.faqs)} />
+      <StructuredData data={serviceJsonLd({ name: page.title, description: page.answer, path: `/services/${slug}`, areaServed: locationSlugs.map((s) => locationPages[s].linkLabel) })} />
       <PageHero
         title={page.title}
         description={page.summary}
@@ -38,6 +39,8 @@ export default async function ServiceLandingPage({ params }: { params: Promise<{
         actions={<><Button href="/placement-inquiry">Placement Inquiry</Button><Button href="/tour" variant="ghost">Request a Tour</Button></>}
       />
       <Section title="What this service includes" description="We tailor support based on broad needs, goals, and household fit.">
+        {/* Answer-first: the one paragraph a search engine or AI assistant can quote whole. */}
+        <p className="mb-6 max-w-3xl text-base leading-8 text-brand-navy">{page.answer}</p>
         {/* items-start so the short "at a glance" card sizes to its content instead of stretching. */}
         <div className="grid items-start gap-4 md:grid-cols-2">
           <Card>
@@ -72,8 +75,9 @@ export default async function ServiceLandingPage({ params }: { params: Promise<{
           ))}
         </div>
       </Section>
-      <Section title="Frequently asked questions">
-        <FaqList items={faqs.slice(0, 3)} />
+      <Section title={`${page.linkLabel}: common questions`}>
+        {/* Page-specific questions carry FAQPage markup here; the shared ones below stay marked up on /faq only. */}
+        <FaqList items={[...page.faqs, ...faqs.slice(0, 2)]} />
         <p className="mt-4 text-sm text-brand-slate">
           More questions are answered on our <Link href="/faq" className="font-semibold text-brand-teal hover:text-brand-navy">FAQ page</Link>, or review <Link href="/requirements" className="font-semibold text-brand-teal hover:text-brand-navy">placement requirements</Link> before you inquire.
         </p>

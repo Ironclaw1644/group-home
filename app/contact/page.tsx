@@ -5,7 +5,7 @@ import { PageHero } from '@/components/page-hero';
 import { LeadForm } from '@/components/lead-form';
 import { Section, Card } from '@/components/ui';
 
-export const metadata = buildMetadata({ title: 'Contact At Home Family Services | North Chesterfield, VA', path: '/contact', description: 'Call (804) 919-3030, email, or send a message about disability services and group home placement for adults 18+ in the Richmond area.' });
+export const metadata = buildMetadata({ title: 'Contact At Home Family Services | North Chesterfield, VA', path: '/contact', description: 'Call (804) 919-3030, email, or send a message about disability services and group home placement for adults 18+ in North Chesterfield and the Richmond area.' });
 
 export default function ContactPage() {
   return (

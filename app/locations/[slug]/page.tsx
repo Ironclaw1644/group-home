@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { locationPages, locationSlugs, faqs, serviceSlugs, servicePages } from '@/lib/content';
-import { buildMetadata, serviceJsonLd } from '@/lib/site';
+import { buildMetadata, serviceJsonLd, faqJsonLd } from '@/lib/site';
 import { PageHero } from '@/components/page-hero';
 import { Section, Card, Button } from '@/components/ui';
 import { FaqList } from '@/components/faq-list';
@@ -28,7 +28,8 @@ export default async function LocationLandingPage({ params }: { params: Promise<
 
   return (
     <>
-      <StructuredData data={serviceJsonLd({ name: page.title, description: page.summary, path: `/locations/${slug}`, areaServed: [page.linkLabel, ...page.nearby] })} />
+      <StructuredData data={faqJsonLd(page.faqs)} />
+      <StructuredData data={serviceJsonLd({ name: page.title, description: page.answer, path: `/locations/${slug}`, areaServed: [page.linkLabel, ...page.nearby] })} />
       <PageHero
         title={page.title}
         description={page.summary}
@@ -36,6 +37,8 @@ export default async function LocationLandingPage({ params }: { params: Promise<
         actions={<><Button href="/placement-inquiry">Placement Inquiry</Button><Button href="/tour" variant="ghost">Request Tour</Button></>}
       />
       <Section title="How we support families in this area" description="We work with families and coordinators who need a responsive, trust-centered placement process.">
+        {/* Answer-first: the one paragraph a search engine or AI assistant can quote whole. */}
+        <p className="mb-6 max-w-3xl text-base leading-8 text-brand-navy">{page.answer}</p>
         <div className="grid gap-4 md:grid-cols-2">
           <Card>
             {page.detail.map((paragraph, index) => (
@@ -65,8 +68,9 @@ export default async function LocationLandingPage({ params }: { params: Promise<
           </Card>
         </div>
       </Section>
-      <Section title="Frequently asked questions for local placement inquiries">
-        <FaqList items={faqs.slice(0, 3)} />
+      <Section title={`Questions from ${page.linkLabel} families`}>
+        {/* Page-specific questions carry FAQPage markup here; the shared ones below stay marked up on /faq only. */}
+        <FaqList items={[...page.faqs, faqs[0], faqs[9]]} />
         <p className="mt-4 text-sm text-brand-slate">
           See the full <Link href="/faq" className="font-semibold text-brand-teal hover:text-brand-navy">FAQ</Link>, browse <Link href="/resources" className="font-semibold text-brand-teal hover:text-brand-navy">family resources</Link>, or view <Link href="/locations" className="font-semibold text-brand-teal hover:text-brand-navy">all service areas</Link>.
         </p>

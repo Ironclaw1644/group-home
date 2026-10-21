@@ -11,7 +11,7 @@ export const metadata = buildMetadata({ title: 'Group Home FAQ | Eligibility, To
 export default function FaqPage() {
   return (
     <>
-      {/* Canonical home for FAQ markup — service and location pages reuse the questions visually but leave the schema here. */}
+      {/* Canonical home for the shared FAQ markup — service and location pages reuse a few of these visually but only mark up their own page-specific questions. */}
       <StructuredData data={faqJsonLd(faqs)} />
       <PageHero
         title="Frequently asked questions"

@@ -4,7 +4,7 @@ import { PageHero } from '@/components/page-hero';
 import { LeadForm } from '@/components/lead-form';
 import { Section, Card } from '@/components/ui';
 
-export const metadata = buildMetadata({ title: 'Request a Tour | Group Home in North Chesterfield, VA', path: '/tour', description: 'Book an in-person or phone tour of our North Chesterfield group home. Share a few preferred times and we will follow up to confirm.' });
+export const metadata = buildMetadata({ title: 'Request a Tour | Group Home in North Chesterfield, VA', path: '/tour', description: 'Book an in-person or phone tour of our North Chesterfield, VA group home for adults with disabilities. Share a few preferred times and we will confirm.' });
 
 export default function TourPage() {
   return (
