@@ -4,6 +4,7 @@ import { assertTopLevelLead, parseLeadMeta } from '@/lib/forms';
 import { insertLocalLead, markLeadForwardError, markLeadForwarded } from '@/lib/storage';
 import { sendLeadTransactionalEmails } from '@/lib/email/service';
 import { upsertSubscriberFromLeadOptIn } from '@/lib/subscribers';
+import { aiSourceOf, sourceChannelOf } from '@/lib/source';
 
 function parseReferer(input?: string | null) {
   if (!input) return { referrer: undefined as string | undefined, pagePath: undefined as string | undefined, search: new URLSearchParams() };
@@ -93,6 +94,10 @@ export async function POST(req: Request) {
           device: detectDevice(userAgent),
           user_agent: userAgent || null,
           meta: {
+            // Derived from the stored referrer/utm; ai_source names the assistant
+            // (chatgpt.com, perplexity.ai, ...) when a lead came from an AI answer.
+            traffic_source: sourceChannelOf(localLead.referrer, localLead.utm_source, localLead.utm_medium),
+            ai_source: aiSourceOf(localLead.referrer, localLead.utm_source),
             lead_type: localLead.lead_type || 'general',
             page_path: localLead.page_path || null,
             subscribe_updates: subscribeUpdates

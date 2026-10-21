@@ -2,6 +2,7 @@ import 'server-only';
 
 import { cmsServerClient } from '@/lib/supabase/cmsServer';
 import type { Database } from '@/lib/supabase/cms.types';
+import { SOURCE_LABELS, aiSourceOf, sourceChannelOf, type SourceChannel } from '@/lib/source';
 
 type ActivityRow = Database['athome_family_services_llc']['Tables']['activity_events']['Row'];
 
@@ -81,6 +82,30 @@ export async function getActivityAnalytics(days: RangeDays = 30) {
     .sort((a, b) => b.visits - a.visits)
     .slice(0, 15);
 
+  // Traffic sources by visit: a session's first page view carries the external
+  // referrer/utm, later in-site navigations would only repeat it.
+  const firstViewBySession = new Map<string, ActivityRow>();
+  for (const row of pageViews) {
+    const key = row.session_id || row.id;
+    if (!firstViewBySession.has(key)) firstViewBySession.set(key, row);
+  }
+  const convertedSessions = new Set(formSubmits.map((row) => row.session_id).filter(Boolean) as string[]);
+  const sourceMap = new Map<SourceChannel, { visits: number; conversions: number }>();
+  const aiMap = new Map<string, number>();
+  for (const [session, row] of firstViewBySession) {
+    const channel = sourceChannelOf(row.referrer, row.utm_source, row.utm_medium);
+    const target = sourceMap.get(channel) ?? { visits: 0, conversions: 0 };
+    target.visits += 1;
+    if (convertedSessions.has(session)) target.conversions += 1;
+    sourceMap.set(channel, target);
+    const ai = aiSourceOf(row.referrer, row.utm_source);
+    if (ai) aiMap.set(ai, (aiMap.get(ai) ?? 0) + 1);
+  }
+  const trafficSources = [...sourceMap.entries()]
+    .map(([channel, m]) => ({ channel, label: SOURCE_LABELS[channel], visits: m.visits, conversions: m.conversions }))
+    .sort((a, b) => b.visits - a.visits);
+  const aiAssistants = [...aiMap.entries()].map(([source, visits]) => ({ source, visits })).sort((a, b) => b.visits - a.visits);
+
   const visits = pageViews.length;
   const conversions = placementInquiries + tourRequests;
   const conversionRate = visits ? Number(((conversions / visits) * 100).toFixed(1)) : 0;
@@ -100,6 +125,8 @@ export async function getActivityAnalytics(days: RangeDays = 30) {
       desktop: Number(((deviceCounts.desktop / totalDevice) * 100).toFixed(1)),
       tablet: Number(((deviceCounts.tablet / totalDevice) * 100).toFixed(1))
     },
-    topCities
+    topCities,
+    trafficSources,
+    aiAssistants
   };
 }

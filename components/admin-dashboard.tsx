@@ -41,6 +41,13 @@ type ActivityData = {
     conversions: number;
     conversionRate: number;
   }>;
+  trafficSources: Array<{ channel: string; label: string; visits: number; conversions: number }>;
+  aiAssistants: Array<{ source: string; visits: number }>;
+};
+
+type SerpData = {
+  keywords: Array<{ query: string; latest: number | null; latestOn: string | null; previous: number | null; best: number | null; page: string | null }>;
+  runs: Array<{ started_at: string; finished_at: string | null; status: string; ranking: number | null; queries: number; error: string | null }>;
 };
 
 type EmailCampaign = {
@@ -103,6 +110,8 @@ export function AdminDashboard({
   const [activityData, setActivityData] = useState<ActivityData | null>(null);
   const [loadingActivity, setLoadingActivity] = useState(false);
   const [activityError, setActivityError] = useState<string | null>(null);
+  const [serpData, setSerpData] = useState<SerpData | null>(null);
+  const [serpError, setSerpError] = useState<string | null>(null);
   const [emailSubject, setEmailSubject] = useState('');
   const [emailPreview, setEmailPreview] = useState('');
   const [emailBody, setEmailBody] = useState('');
@@ -178,6 +187,19 @@ export function AdminDashboard({
       setActivityError(error instanceof Error ? error.message : 'Failed to load activity analytics');
     } finally {
       setLoadingActivity(false);
+    }
+  }
+
+  async function fetchSerp() {
+    setSerpError(null);
+    try {
+      const res = await fetch('/api/admin/serp');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load rankings');
+      setSerpData(data as SerpData);
+    } catch (error) {
+      setSerpData(null);
+      setSerpError(error instanceof Error ? error.message : 'Failed to load rankings');
     }
   }
 
@@ -288,6 +310,11 @@ export function AdminDashboard({
     if (tab !== 'activity') return;
     fetchActivity(activityDays);
   }, [tab, activityDays]);
+
+  useEffect(() => {
+    if (tab !== 'activity' || serpData) return;
+    fetchSerp();
+  }, [tab]);
 
   useEffect(() => {
     if (tab !== 'email') return;
@@ -1238,6 +1265,71 @@ export function AdminDashboard({
                         </tbody>
                       </table>
                     </div>
+                  </Card>
+                </div>
+
+                <div className="grid gap-5 lg:grid-cols-2">
+                  <Card>
+                    <h3 className="text-base font-semibold text-brand-navy">Where Visitors Come From</h3>
+                    <p className="mt-1 text-sm text-brand-slate">Counted once per visit. &ldquo;ChatGPT / AI assistants&rdquo; means a visitor clicked through from an AI answer.</p>
+                    <div className="-mx-4 mt-4 w-full overflow-x-auto px-4">
+                      <table className="min-w-full text-sm">
+                        <thead>
+                          <tr className="border-b text-left text-xs uppercase tracking-wider text-brand-slate">
+                            <th className="px-2 py-2">Source</th>
+                            <th className="px-2 py-2">Visits</th>
+                            <th className="px-2 py-2">Inquiries</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(activityData.trafficSources ?? []).map((item) => (
+                            <tr key={item.channel} className="border-b border-brand-navy/5">
+                              <td className="px-2 py-2">{item.label}</td>
+                              <td className="px-2 py-2">{item.visits}</td>
+                              <td className="px-2 py-2">{item.conversions}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {(activityData.aiAssistants ?? []).length ? (
+                      <p className="mt-3 text-xs text-brand-slate">AI assistants: {activityData.aiAssistants.map((a) => `${a.source} (${a.visits})`).join(', ')}</p>
+                    ) : null}
+                  </Card>
+
+                  <Card>
+                    <h3 className="text-base font-semibold text-brand-navy">Google Rankings</h3>
+                    <p className="mt-1 text-sm text-brand-slate">Checked every Tuesday from a Chesterfield, VA search. Top 20 only; &ldquo;—&rdquo; means not in the top 20.</p>
+                    {serpError ? <p className="mt-3 text-sm text-rose-700">{serpError}</p> : null}
+                    {serpData ? (
+                      <div className="-mx-4 mt-4 w-full overflow-x-auto px-4">
+                        <table className="min-w-full text-sm">
+                          <thead>
+                            <tr className="border-b text-left text-xs uppercase tracking-wider text-brand-slate">
+                              <th className="px-2 py-2">Search</th>
+                              <th className="px-2 py-2">Now</th>
+                              <th className="px-2 py-2">Last week</th>
+                              <th className="px-2 py-2">Best</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {serpData.keywords.map((item) => (
+                              <tr key={item.query} className="border-b border-brand-navy/5">
+                                <td className="px-2 py-2">{item.query}</td>
+                                <td className="px-2 py-2">{item.latest ?? '—'}</td>
+                                <td className="px-2 py-2">{item.previous ?? '—'}</td>
+                                <td className="px-2 py-2">{item.best ?? '—'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        {serpData.runs[0] ? (
+                          <p className="mt-3 text-xs text-brand-slate">
+                            Last check {new Date(serpData.runs[0].started_at).toLocaleDateString()}: {serpData.runs[0].status === 'ok' ? `${serpData.runs[0].ranking ?? 0} of ${serpData.runs[0].queries} searches in the top 20` : `failed (${serpData.runs[0].error ?? 'no detail'})`}
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </Card>
                 </div>
 
