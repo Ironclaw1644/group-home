@@ -10,7 +10,8 @@
     "generate:icons": "node scripts/generate-icons.mjs",
     "email:test": "node scripts/send-test-email.mjs",
     "email:sanity": "node scripts/sanity-blast-skip.mjs",
-    "serp": "node scripts/serp-tracker.mjs"
+    "serp": "node scripts/serp-tracker.mjs",
+    "indexnow": "node scripts/indexnow.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

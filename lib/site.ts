@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { business } from '@/lib/content';
+import { business, servicePages, serviceSlugs } from '@/lib/content';
 import { absoluteUrl } from '@/lib/utils';
 
 export const defaultDescription = 'Residential disability services for adults 18+ with developmental disabilities in North Chesterfield, VA. 24/7 supportive living. Call (804) 919-3030.';
@@ -55,12 +55,32 @@ export function localBusinessJsonLd() {
       '@type': 'Place',
       name
     })),
+    knowsAbout: ['Supportive living', 'Adult group homes', 'Intellectual and developmental disabilities', 'Life skills training'],
+    hasOfferCatalog: {
+      '@type': 'OfferCatalog',
+      name: 'Residential disability services',
+      itemListElement: serviceSlugs.map((slug) => ({
+        '@type': 'Offer',
+        itemOffered: { '@type': 'Service', name: servicePages[slug].title, url: absoluteUrl(`/services/${slug}`) }
+      }))
+    },
     sameAs: [business.instagram]
   };
 }
 
+export function websiteJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': absoluteUrl('/#website'),
+    name: business.name,
+    url: absoluteUrl('/'),
+    publisher: { '@id': BUSINESS_ID }
+  };
+}
+
 /** Marks up an FAQ block so it is eligible for the FAQ rich result in search. */
-export function faqJsonLd(items: { q: string; a: string }[]) {
+export function faqJsonLd(items: readonly { q: string; a: string }[]) {
   return {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
