@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { buildMetadata } from '@/lib/site';
 import { PageHero } from '@/components/page-hero';
 import { LeadForm } from '@/components/lead-form';
+import { GuideLinks } from '@/components/guide-links';
 import { Section, Card } from '@/components/ui';
 
 export const metadata = buildMetadata({ title: 'Request a Tour | Group Home in North Chesterfield, VA', path: '/tour', description: 'Book an in-person or phone tour of our North Chesterfield, VA group home for adults with disabilities. Share a few preferred times and we will confirm.' });
@@ -79,6 +80,7 @@ export default function TourPage() {
           ]}
         />
       </Section>
+      <GuideLinks pageKey="/tour" />
     </>
   );
 }

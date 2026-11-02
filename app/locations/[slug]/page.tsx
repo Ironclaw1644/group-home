@@ -6,6 +6,7 @@ import { buildMetadata, serviceJsonLd, faqJsonLd } from '@/lib/site';
 import { PageHero } from '@/components/page-hero';
 import { Section, Card, Button } from '@/components/ui';
 import { FaqList } from '@/components/faq-list';
+import { GuideLinks } from '@/components/guide-links';
 import { StructuredData } from '@/components/structured-data';
 
 export function generateStaticParams() {
@@ -68,6 +69,21 @@ export default async function LocationLandingPage({ params }: { params: Promise<
           </Card>
         </div>
       </Section>
+      <Section title={`Developmental disability services for ${page.linkLabel} residents`} description="Waiver screening and support coordination start with your local Community Services Board, not with a provider.">
+        <Card className="max-w-4xl">
+          <p className="text-sm leading-7 text-brand-slate">{page.localHelp.text}</p>
+          <p className="mt-3 text-xs text-brand-slate">
+            Source:{' '}
+            {page.localHelp.sources.map((source, index) => (
+              <span key={source.url}>
+                {index > 0 ? '; ' : ''}
+                <a href={source.url} className="font-semibold text-brand-teal hover:text-brand-navy" rel="noopener" target="_blank">{source.label}</a>
+              </span>
+            ))}
+          </p>
+        </Card>
+      </Section>
+      <GuideLinks pageKey="location" title="Answers for families comparing group homes" />
       <Section title={`Questions from ${page.linkLabel} families`}>
         {/* Page-specific questions carry FAQPage markup here; the shared ones below stay marked up on /faq only. */}
         <FaqList items={[...page.faqs, faqs[0], faqs[9]]} />

@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { buildMetadata } from '@/lib/site';
 import { PageHero } from '@/components/page-hero';
+import { GuideLinks } from '@/components/guide-links';
 import { Section, Card, Button } from '@/components/ui';
 import { FaqList } from '@/components/faq-list';
 import { faqs } from '@/lib/content';
@@ -76,6 +77,7 @@ export default function RequirementsPage() {
           </Card>
         </div>
       </Section>
+      <GuideLinks pageKey="/requirements" />
     </>
   );
 }

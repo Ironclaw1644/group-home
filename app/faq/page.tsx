@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import { buildMetadata, faqJsonLd } from '@/lib/site';
 import { PageHero } from '@/components/page-hero';
-import { Section, Button } from '@/components/ui';
+import { Section, Button, Card } from '@/components/ui';
 import { FaqList } from '@/components/faq-list';
 import { StructuredData } from '@/components/structured-data';
 import { faqs } from '@/lib/content';
+import { familyQuestions, familyQuestionPath } from '@/lib/family-questions';
 
 export const metadata = buildMetadata({ title: 'Group Home FAQ | Eligibility, Tours & Coverage in VA', path: '/faq', description: 'Answers on who is eligible, what care we do and do not provide, how quickly a tour can be arranged, and what to include in a first placement inquiry.' });
 
@@ -24,6 +25,15 @@ export default function FaqPage() {
           Still deciding? Review <Link href="/requirements" className="font-semibold text-brand-teal hover:text-brand-navy">placement requirements</Link>, browse our <Link href="/services" className="font-semibold text-brand-teal hover:text-brand-navy">services</Link>, or see <Link href="/our-home" className="font-semibold text-brand-teal hover:text-brand-navy">our home</Link>.
         </p>
         <div className="mt-6 flex flex-wrap gap-3"><Button href="/contact">Contact Us</Button><Button href="/placement-inquiry" variant="ghost">Placement Inquiry</Button></div>
+      </Section>
+      <Section title="In-depth answers" description="Longer answers about group homes and Virginia’s DD waivers, each with the official sources it is based on.">
+        <div className="grid gap-4 sm:grid-cols-2">
+          {familyQuestions.map((item) => (
+            <Card key={item.slug}>
+              <Link href={familyQuestionPath(item.slug)} className="font-semibold text-brand-teal hover:text-brand-navy">{item.question}</Link>
+            </Card>
+          ))}
+        </div>
       </Section>
     </>
   );

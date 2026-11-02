@@ -6,6 +6,7 @@ import { buildMetadata, serviceJsonLd, faqJsonLd } from '@/lib/site';
 import { PageHero } from '@/components/page-hero';
 import { Section, Card, Button } from '@/components/ui';
 import { FaqList } from '@/components/faq-list';
+import { GuideLinks } from '@/components/guide-links';
 import { StructuredData } from '@/components/structured-data';
 
 export function generateStaticParams() {
@@ -75,6 +76,7 @@ export default async function ServiceLandingPage({ params }: { params: Promise<{
           ))}
         </div>
       </Section>
+      <GuideLinks pageKey={`/services/${slug}`} title="Related answers for families" />
       <Section title={`${page.linkLabel}: common questions`}>
         {/* Page-specific questions carry FAQPage markup here; the shared ones below stay marked up on /faq only. */}
         <FaqList items={[...page.faqs, ...faqs.slice(0, 2)]} />

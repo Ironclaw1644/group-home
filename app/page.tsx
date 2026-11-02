@@ -6,6 +6,7 @@ import { AnnouncementList } from '@/components/announcement-list';
 import { business } from '@/lib/content';
 import { Reveal } from '@/components/reveal';
 import { getAnnouncements } from '@/lib/announcements';
+import { GuideLinks } from '@/components/guide-links';
 
 const homeHighlights = [
   {
@@ -32,8 +33,8 @@ export const revalidate = 300;
 
 export default async function HomePage() {
   const announcements = await getAnnouncements({ currentPath: '/', limit: 3 });
-  const heroTitle = 'A warm, supportive home built on dignity, trust, and daily care.';
-  const heroSubtitle = 'Residential disability services and 24/7 supportive living for adults with developmental disabilities in North Chesterfield, Virginia.';
+  const heroTitle = 'Adult Group Home & Disability Services in North Chesterfield, VA';
+  const heroSubtitle = 'A warm, supportive home built on dignity, trust, and daily care: 24/7 supportive living for adults 18+ with developmental disabilities, serving families across Chesterfield County, Richmond, Midlothian, and Colonial Heights.';
   const heroCta = 'Start a Placement Inquiry';
   return (
     <>
@@ -141,6 +142,8 @@ export default async function HomePage() {
           </Card>
         </div>
       </Section>
+
+      <GuideLinks pageKey="/" />
 
       <Section title="Current announcements" description="Updates about tours, openings, and scheduling.">
         <Reveal>

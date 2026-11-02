@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { ChevronDown } from 'lucide-react';
 
 import type { FaqItem } from '@/lib/content';
@@ -24,6 +25,11 @@ export function FaqList({ items }: { items: readonly FaqItem[] }) {
               <a href={item.source.url} className="font-semibold text-brand-teal hover:text-brand-navy" rel="noopener" target="_blank">
                 {item.source.label}
               </a>
+            </p>
+          ) : null}
+          {item.more ? (
+            <p className="mt-2 text-sm">
+              <Link href={item.more.href} className="font-semibold text-brand-teal hover:text-brand-navy">{item.more.label}</Link>
             </p>
           ) : null}
         </details>

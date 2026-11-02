@@ -1,3 +1,5 @@
+import { familyQuestions, familyQuestionPath } from '@/lib/family-questions';
+
 export const business = {
   name: 'At Home Family Services, LLC',
   phone: '(804) 919-3030',
@@ -46,9 +48,9 @@ export const locationSlugs = [
 
 export const servicePages = {
   'supportive-living-id-dd': {
-    title: 'Supportive Living for Adults with ID/DD',
-    metaTitle: '24/7 Supportive Living for Adults with ID/DD | VA',
-    metaDescription: 'Round-the-clock residential support in a structured home: consistent staff, daily routines, medication coordination, and regular family contact.',
+    title: 'Supportive Living for Adults with Disabilities',
+    metaTitle: 'Supportive Living for Adults with Disabilities, Chesterfield',
+    metaDescription: '24/7 supportive living for adults with disabilities in North Chesterfield, VA: consistent staff, daily routines, medication coordination, and family contact.',
     linkLabel: 'Supportive Living for Adults',
     answer: 'At Home Family Services provides 24/7 supportive living for adults 18+ with intellectual and developmental disabilities at our home in North Chesterfield, Virginia. Residents have staff present around the clock in consistent shifts, predictable daily routines, medication support coordinated with their licensed providers, and regular contact with their families and support coordinators.',
     faqs: [
@@ -65,11 +67,11 @@ export const servicePages = {
     ]
   },
   'group-home-adults-id-dd': {
-    title: 'Group Home Placement for Adults with ID/DD',
-    metaTitle: 'Group Home Placement for Adults with Disabilities | VA',
-    metaDescription: 'Placement guidance, tours, intake coordination, and transition planning for families and support coordinators comparing adult group homes in the Richmond area.',
+    title: 'Group Home for Adults with Disabilities',
+    metaTitle: 'Group Home for Adults with Disabilities | Chesterfield, VA',
+    metaDescription: 'Group home for adults with disabilities in Chesterfield, VA: placement guidance, phone or in-person tours, intake coordination, and transition planning.',
     linkLabel: 'Group Home Placement',
-    answer: 'At Home Family Services helps families and support coordinators place adults 18+ with intellectual and developmental disabilities in our group home in North Chesterfield, Virginia. The process is a screening call about timeframe, support level, and coverage, then a tour by phone or in person, then intake coordination and transition planning if the fit is right.',
+    answer: 'At Home Family Services is a group home for adults 18+ with intellectual and developmental disabilities in North Chesterfield, Chesterfield County, Virginia, with staff support 24/7. For families and support coordinators, placement is a screening call about timeframe, support level, and coverage, then a tour by phone or in person, then intake coordination and transition planning if the fit is right.',
     faqs: [
       { q: 'How do I find a group home for an adult with disabilities near Richmond, VA?', a: 'Start by comparing homes on support level, location, and coverage. Our home is in North Chesterfield, a short drive from Richmond. Call (804) 919-3030 or send a placement inquiry with the timeframe, broad support needs, and coverage type, and we will set up a screening call.' },
       { q: 'Can a support coordinator join the tour?', a: 'Yes. Support coordinators are welcome on tour calls and in placement conversations, and we are used to working alongside case teams.' },
@@ -141,7 +143,7 @@ export const servicePages = {
 
 export const locationPages = {
   'north-chesterfield-va': {
-    title: 'Supportive Living in North Chesterfield, VA',
+    title: 'Adult Group Home in North Chesterfield, VA',
     metaTitle: 'Adult Group Home in North Chesterfield, VA | Book a Tour',
     metaDescription: 'Residential disability services for adults 18+ with developmental disabilities on Clovis St., North Chesterfield. Tours welcome — call (804) 919-3030.',
     linkLabel: 'North Chesterfield, VA',
@@ -151,6 +153,10 @@ export const locationPages = {
       { q: 'How do we arrange a tour?', a: 'Call (804) 919-3030 or request a tour online. Tours can be by phone or in person, and support coordinators are welcome to join.' }
     ],
     summary: 'Local placement and tour support for families seeking adult ID/DD residential care in North Chesterfield.',
+    localHelp: {
+      text: 'Our home’s ZIP code, 23237, is in the area served by the Chesterfield Community Services Board. For developmental disability services, Chesterfield County Developmental Disability Services takes calls at (804) 717-6642: press two to speak with the intake coordinator, or press one to schedule an intake meeting. Contacting your Community Services Board is the first step to being screened and assessed for Virginia’s DD waivers.',
+      sources: [{ label: 'VACSB CSB/BHA directory', url: 'https://vacsb.org/csb-bha-directory/' }, { label: 'Chesterfield County Developmental Disability Services', url: 'https://www.chesterfield.gov/900/Developmental-Disability-Services' }, { label: 'Virginia DBHDS: Waiver information', url: 'https://dbhds.virginia.gov/waiver-information-for-individuals-and-families/' }]
+    },
     nearby: ['Chesterfield County', 'Richmond', 'Midlothian'],
     detail: [
       'Our home is located in North Chesterfield, on Clovis Street. For local families this means tours are easy to arrange and visits do not require a long drive — something that matters more than people expect once a placement is underway.',
@@ -158,7 +164,7 @@ export const locationPages = {
     ]
   },
   'chesterfield-county-va': {
-    title: 'Adult Group Home Services in Chesterfield County, VA',
+    title: 'Disability Services for Adults in Chesterfield County, VA',
     metaTitle: 'Disability Services for Adults | Chesterfield County, VA',
     metaDescription: 'Group home placement and supportive living for adults 18+ with intellectual and developmental disabilities across Chesterfield County. Ask about availability.',
     linkLabel: 'Chesterfield County, VA',
@@ -168,6 +174,10 @@ export const locationPages = {
       { q: 'Where can Chesterfield County families ask about developmental disability services?', a: 'Chesterfield County’s Developmental Disability Services runs an intake line at (804) 717-6642 for county services and supports. For placement at our home, call us directly at (804) 919-3030.', source: { label: 'Chesterfield County Developmental Disability Services', url: 'https://www.chesterfield.gov/900/Developmental-Disability-Services' } }
     ],
     summary: 'Residential supportive living for adults 18+ with developmental disabilities in Chesterfield County.',
+    localHelp: {
+      text: 'Chesterfield County residents are served by the Chesterfield Community Services Board, (804) 748-1227. Chesterfield County Developmental Disability Services supports children and adults with developmental disabilities, including community integration opportunities and residential supports for adults; its intake coordinator is at (804) 717-6642. Virginia’s DD waivers currently have a waiting list, and the first step to screening is your Community Services Board.',
+      sources: [{ label: 'VACSB CSB/BHA directory', url: 'https://vacsb.org/csb-bha-directory/' }, { label: 'Chesterfield County Developmental Disability Services', url: 'https://www.chesterfield.gov/900/Developmental-Disability-Services' }, { label: 'Virginia DBHDS: Waiver information', url: 'https://dbhds.virginia.gov/waiver-information-for-individuals-and-families/' }]
+    },
     nearby: ['North Chesterfield', 'Midlothian', 'Colonial Heights'],
     detail: [
       'We serve families throughout Chesterfield County from our North Chesterfield home, working with support coordinators across the county on placements for adults 18 and older.',
@@ -175,7 +185,7 @@ export const locationPages = {
     ]
   },
   'richmond-va': {
-    title: 'Residential Placement Support Near Richmond, VA',
+    title: 'Disability Services & Group Home Placement Near Richmond, VA',
     metaTitle: 'Disability Services & Group Home Placement | Richmond, VA',
     metaDescription: 'Residential disability services for adults 18+ at our North Chesterfield home, a short drive from Richmond. Phone or in-person tours available.',
     linkLabel: 'Richmond, VA',
@@ -185,6 +195,10 @@ export const locationPages = {
       { q: 'Do you work with Richmond-area support coordinators?', a: 'Regularly. We work with Richmond-area support coordinators and referral partners and are used to coordinating a placement conversation across a whole case team.' }
     ],
     summary: 'Families in Richmond can request tours and placement guidance for our supportive living home nearby.',
+    localHelp: {
+      text: 'City of Richmond residents are served by the Richmond Behavioral Health Authority (RBHA), (804) 819-4000, the public body responsible for mental health, intellectual disability, and substance use services for the city. As the city’s behavioral health authority, RBHA is where Richmond families start screening and assessment for Virginia’s DD waivers. Support coordinators are welcome in placement conversations with us.',
+      sources: [{ label: 'VACSB CSB/BHA directory', url: 'https://vacsb.org/csb-bha-directory/' }, { label: 'Richmond Behavioral Health Authority', url: 'https://www.rbha.org/' }, { label: 'Virginia DBHDS: Waiver information', url: 'https://dbhds.virginia.gov/waiver-information-for-individuals-and-families/' }]
+    },
     nearby: ['North Chesterfield', 'Chesterfield County', 'Colonial Heights'],
     detail: [
       'Richmond families are a short drive from our North Chesterfield home, close enough for regular visits while giving a resident a quieter, residential setting to live in day to day.',
@@ -192,7 +206,7 @@ export const locationPages = {
     ]
   },
   'midlothian-va': {
-    title: 'Supportive Living Options Near Midlothian, VA',
+    title: 'Disability Services for Adults Near Midlothian, VA',
     metaTitle: 'Disability Services for Adults Near Midlothian, VA',
     metaDescription: 'Supportive living and group home placement for adults with developmental disabilities, a short drive from Midlothian. Start with a phone tour.',
     linkLabel: 'Midlothian, VA',
@@ -202,6 +216,10 @@ export const locationPages = {
       { q: 'What is the first step for a Midlothian family?', a: 'A phone tour. It takes very little time and gives you a clear sense of the home before arranging an in-person visit. Call (804) 919-3030 or request a tour online.' }
     ],
     summary: 'Explore a warm, structured home environment with trained support professionals and individualized care.',
+    localHelp: {
+      text: 'Midlothian is in Chesterfield County and is listed in the Chesterfield Community Services Board’s service area, (804) 748-1227. The Community Services Board is the first step to being screened and assessed for Virginia’s DD waivers. Chesterfield County Developmental Disability Services, (804) 717-6642, provides supports that include residential supports for adults.',
+      sources: [{ label: 'VACSB CSB/BHA directory', url: 'https://vacsb.org/csb-bha-directory/' }, { label: 'Chesterfield County Developmental Disability Services', url: 'https://www.chesterfield.gov/900/Developmental-Disability-Services' }, { label: 'Virginia DBHDS: Waiver information', url: 'https://dbhds.virginia.gov/waiver-information-for-individuals-and-families/' }]
+    },
     nearby: ['Chesterfield County', 'North Chesterfield', 'Richmond'],
     detail: [
       'For Midlothian families, our home offers nearby supportive living without moving a loved one out of the region entirely — visits stay practical, and familiar routines can continue.',
@@ -209,9 +227,9 @@ export const locationPages = {
     ]
   },
   'colonial-heights-va': {
-    title: 'Adult ID/DD Group Home Placement Near Colonial Heights, VA',
-    metaTitle: 'Adult Disability Services Near Colonial Heights, VA',
-    metaDescription: 'Residential placement for adults 18+ with developmental disabilities within reach of Colonial Heights. One screening call covers fit and coverage.',
+    title: 'Adult Group Home Near Colonial Heights, VA',
+    metaTitle: 'Adult Group Home Near Colonial Heights, VA | Tours',
+    metaDescription: 'Adult group home for adults 18+ with developmental disabilities, within reach of Colonial Heights. One screening call covers fit, support level, and coverage.',
     linkLabel: 'Colonial Heights, VA',
     answer: 'Colonial Heights families can place an adult 18+ with developmental disabilities at At Home Family Services, a 24/7 supportive living home at 9207 Clovis St., North Chesterfield, VA 23237. One screening call covers timeframe, support level, and coverage before any tour; call (804) 919-3030.',
     faqs: [
@@ -219,6 +237,10 @@ export const locationPages = {
       { q: 'How do you keep the process short for families farther away?', a: 'We start with one screening conversation about timeframe, support level, and coverage, and arrange a tour only once it is clear the fit makes sense.' }
     ],
     summary: 'Placement inquiries and tour requests for supportive living within reach of Colonial Heights families.',
+    localHelp: {
+      text: 'Colonial Heights is served by the Greater Reach Community Services Board, 20 W. Bank St., Petersburg, (804) 862-8008, which also serves Petersburg, Hopewell, Dinwiddie County, and Prince George County, among others. Contacting it is the first step to being screened and assessed for Virginia’s DD waivers. Wherever an inquiry comes from, placement is at our North Chesterfield home.',
+      sources: [{ label: 'VACSB CSB/BHA directory', url: 'https://vacsb.org/csb-bha-directory/' }, { label: 'Virginia DBHDS: Waiver information', url: 'https://dbhds.virginia.gov/waiver-information-for-individuals-and-families/' }]
+    },
     nearby: ['Chesterfield County', 'North Chesterfield', 'Richmond'],
     detail: [
       'Colonial Heights families are within reach of our North Chesterfield home, and we welcome placement inquiries and tour requests from the area.',
@@ -260,6 +282,10 @@ export const siteDirectory: SiteLinkGroup[] = [
     ]
   },
   {
+    heading: 'Family Questions',
+    links: familyQuestions.map((item) => ({ href: familyQuestionPath(item.slug), label: item.label }))
+  },
+  {
     heading: 'Get Started',
     links: [
       { href: '/placement-inquiry', label: 'Start a Placement Inquiry' },
@@ -278,18 +304,20 @@ export const publicPaths = siteDirectory.flatMap((group) => group.links.map((lin
  * trusting, and this site needs that crawl signal to be credible.
  */
 export const contentUpdatedAt: Record<string, string> = {
-  default: '2026-10-21',
-  '/': '2026-08-03',
+  // Service and location detail pages use the default.
+  default: '2026-11-02',
+  '/': '2026-11-02',
   '/services': '2026-08-03',
   '/our-home': '2026-08-03',
-  '/requirements': '2026-10-21',
-  '/resources': '2026-08-03',
-  '/faq': '2026-10-21',
+  '/requirements': '2026-11-02',
+  '/resources': '2026-11-02',
+  '/faq': '2026-11-02',
   '/announcements': '2026-10-21',
   '/contact': '2026-10-21',
   '/locations': '2026-08-03',
   '/placement-inquiry': '2026-10-21',
-  '/tour': '2026-10-21'
+  '/tour': '2026-11-02',
+  ...Object.fromEntries(familyQuestions.map((item) => [familyQuestionPath(item.slug), item.reviewed]))
 };
 
 export const faqs = [
@@ -343,12 +371,14 @@ export const faqs = [
   },
   {
     q: 'How much does a group home for adults with disabilities cost?',
-    a: 'We do not publish rates on the website. Acceptable insurance or coverage is required; Medicaid waiver, private pay, and other arrangements can be discussed, and final verification happens during intake screening. Ask on the screening call and we will give you an accurate answer for your situation.'
+    a: 'We do not publish rates on the website. Acceptable insurance or coverage is required; Medicaid waiver, private pay, and other arrangements can be discussed, and final verification happens during intake screening. Ask on the screening call and we will give you an accurate answer for your situation.',
+    more: { href: '/faq/how-much-does-a-group-home-cost-in-virginia', label: 'How group home costs work in Virginia' }
   },
   {
     q: 'How do I get a DD waiver in Virginia?',
     a: 'Virginia’s Developmental Disabilities waivers (Building Independence, Family and Individual Supports, and Community Living) are run by the Department of Behavioral Health and Developmental Services (DBHDS). The first step is to contact your local Community Services Board (CSB) to be screened and assessed, and Virginia currently has a waiting list. We do not decide waiver eligibility; coverage for placement at our home is reviewed on the screening call.',
-    source: { label: 'Virginia DBHDS: Waiver information for individuals and families', url: 'https://dbhds.virginia.gov/waiver-information-for-individuals-and-families/' }
+    source: { label: 'Virginia DBHDS: Waiver information for individuals and families', url: 'https://dbhds.virginia.gov/waiver-information-for-individuals-and-families/' },
+    more: { href: '/faq/is-there-a-waiting-list-for-the-dd-waiver-in-virginia', label: 'How the DD waiver waiting list works' }
   },
   {
     q: 'What services do you not provide?',
@@ -356,7 +386,7 @@ export const faqs = [
   }
 ];
 
-export type FaqItem = { q: string; a: string; source?: { label: string; url: string } };
+export type FaqItem = { q: string; a: string; source?: { label: string; url: string }; more?: { href: string; label: string } };
 
 export const imageReferences = [
   {

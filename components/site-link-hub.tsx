@@ -10,7 +10,7 @@ export function SiteLinkHub() {
   return (
     <nav aria-label="All pages" className="container-shell border-t border-brand-navy/10 py-10">
       <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-teal">Everything on this site</h2>
-      <div className="mt-5 grid grid-cols-2 gap-x-4 gap-y-7 sm:gap-8 lg:grid-cols-4">
+      <div className="mt-5 grid grid-cols-2 gap-x-4 gap-y-7 sm:gap-8 lg:grid-cols-5">
         {siteDirectory.map((group) => (
           <div key={group.heading}>
             <h3 className="text-sm font-semibold text-brand-navy">{group.heading}</h3>

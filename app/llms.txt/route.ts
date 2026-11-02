@@ -1,6 +1,7 @@
 import { business, faqs, locationPages, locationSlugs, servicePages, serviceSlugs } from '@/lib/content';
 import { defaultDescription } from '@/lib/site';
 import { absoluteUrl } from '@/lib/utils';
+import { familyQuestions, familyQuestionPath } from '@/lib/family-questions';
 
 /**
  * /llms.txt — a plain-text brief for AI assistants (ChatGPT, Perplexity,
@@ -55,7 +56,19 @@ export function GET() {
     '',
     '## Frequently asked questions',
     '',
-    ...faqs.flatMap((f) => [`### ${f.q}`, '', f.a, ...(f.source ? ['', `Source: ${f.source.url}`] : []), ''])
+    ...faqs.flatMap((f) => [`### ${f.q}`, '', f.a, ...(f.source ? ['', `Source: ${f.source.url}`] : []), '']),
+    '## In-depth answers for families (Virginia)',
+    '',
+    ...familyQuestions.flatMap((f) => [
+      `### [${f.question}](${absoluteUrl(familyQuestionPath(f.slug))})`,
+      '',
+      f.answer,
+      '',
+      `At At Home Family Services: ${f.atOurHome}`,
+      '',
+      `Sources (reviewed ${f.reviewed}): ${f.sources.map((src) => src.url).join(' ; ')}`,
+      ''
+    ])
   ];
 
   return new Response(lines.join('\n'), {
