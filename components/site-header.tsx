@@ -19,10 +19,10 @@ export function SiteHeader() {
           />
           <span className="min-w-0 self-center">
             <p className="truncate text-sm font-semibold tracking-tight text-brand-navy sm:text-base">At Home Family Services, LLC</p>
-            <p className="hidden text-xs text-brand-slate sm:block">Supportive living with dignity, trust, and daily care</p>
+            <p className="hidden truncate text-xs text-brand-slate sm:block">Supportive living with dignity, trust, and daily care</p>
           </span>
         </Link>
-        <nav className="hidden items-center gap-4 lg:flex" aria-label="Primary">
+        <nav className="hidden items-center gap-4 xl:flex" aria-label="Primary">
           {navLinks.map((link) => (
             <Link key={link.href} href={link.href} className="text-sm text-brand-slate hover:text-brand-navy">
               {link.label}
@@ -34,7 +34,7 @@ export function SiteHeader() {
           <Button href="/tour" variant="ghost" trackCta="request-tour" className="hidden md:inline-flex">Request Tour</Button>
         </div>
       </div>
-      <div className="container-shell overflow-x-auto pb-2 lg:hidden">
+      <div className="container-shell overflow-x-auto pb-2 xl:hidden">
         <div className="flex gap-2">
           {navLinks.map((link) => (
             <Link key={link.href} href={link.href} className="whitespace-nowrap rounded-full border border-brand-navy/10 bg-white px-3 py-1.5 text-xs font-medium text-brand-slate hover:text-brand-navy">
