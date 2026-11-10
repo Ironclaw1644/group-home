@@ -57,6 +57,25 @@ export default function ResourcesPage() {
           </p>
         </Card>
       </Section>
+
+      <Section title="Other providers we know" description="If our home is not the right fit, or your family is looking in another state, these providers may be worth a call.">
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card>
+            <h3 className="font-semibold text-brand-navy">Beyon Vital</h3>
+            <p className="mt-3 text-sm leading-7 text-brand-slate">
+              A residential group home in North Chesterfield, Virginia, for mature and young adults, with therapeutic, behavioral, and psycho-educational support. It also offers Community Engagement, which it describes as a service similar to day support, from 9am to 3pm.
+            </p>
+            <a href="https://beyonvital.com/" className="mt-3 inline-flex text-sm font-semibold text-brand-teal hover:text-brand-navy">Beyon Vital, residential group home in North Chesterfield, VA</a>
+          </Card>
+          <Card>
+            <h3 className="font-semibold text-brand-navy">Unity Care</h3>
+            <p className="mt-3 text-sm leading-7 text-brand-slate">
+              Supported living, community participation, and employment supports for people with intellectual and developmental disabilities in Knoxville, Tennessee. Tennessee&rsquo;s provider directory lists it as serving Anderson, Blount, Knox, Loudon, and Sevier counties.
+            </p>
+            <a href="https://unitycaretn.com/" className="mt-3 inline-flex text-sm font-semibold text-brand-teal hover:text-brand-navy">Unity Care, I/DD services in Knoxville, Tennessee</a>
+          </Card>
+        </div>
+      </Section>
       <GuideLinks pageKey="/resources" />
     </>
   );

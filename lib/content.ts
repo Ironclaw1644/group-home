@@ -310,7 +310,7 @@ export const contentUpdatedAt: Record<string, string> = {
   '/services': '2026-08-03',
   '/our-home': '2026-08-03',
   '/requirements': '2026-11-02',
-  '/resources': '2026-11-02',
+  '/resources': '2026-11-09',
   '/faq': '2026-11-02',
   '/announcements': '2026-10-21',
   '/contact': '2026-10-21',
