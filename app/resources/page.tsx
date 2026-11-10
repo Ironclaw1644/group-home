@@ -58,21 +58,28 @@ export default function ResourcesPage() {
         </Card>
       </Section>
 
-      <Section title="Other providers we know" description="If our home is not the right fit, or your family is looking in another state, these providers may be worth a call.">
-        <div className="grid gap-4 md:grid-cols-2">
+      <Section title="Other providers we know" description="Some families need something we do not provide: a daytime program, support in another state, or help with alcohol or drug use. These providers may be worth a call.">
+        <div className="grid gap-4 md:grid-cols-3">
           <Card>
-            <h3 className="font-semibold text-brand-navy">Beyon Vital</h3>
+            <h3 className="font-semibold text-brand-navy">Daytime activities: Beyon Vital</h3>
             <p className="mt-3 text-sm leading-7 text-brand-slate">
-              A residential group home in North Chesterfield, Virginia, for mature and young adults, with therapeutic, behavioral, and psycho-educational support. It also offers Community Engagement, which it describes as a service similar to day support, from 9am to 3pm.
+              Beyon Vital, a residential group home in North Chesterfield, Virginia, also runs Community Engagement, which it describes as a service similar to day support: community outings, volunteer work, and life coaching from 9am to 3pm.
             </p>
-            <a href="https://beyonvital.com/" className="mt-3 inline-flex text-sm font-semibold text-brand-teal hover:text-brand-navy">Beyon Vital, residential group home in North Chesterfield, VA</a>
+            <a href="https://beyonvital.com/services/community-engagement" className="mt-3 inline-flex text-sm font-semibold text-brand-teal hover:text-brand-navy">Community Engagement at Beyon Vital, North Chesterfield, VA</a>
           </Card>
           <Card>
-            <h3 className="font-semibold text-brand-navy">Unity Care</h3>
+            <h3 className="font-semibold text-brand-navy">Moving to Tennessee: Unity Care</h3>
             <p className="mt-3 text-sm leading-7 text-brand-slate">
-              Supported living, community participation, and employment supports for people with intellectual and developmental disabilities in Knoxville, Tennessee. Tennessee&rsquo;s provider directory lists it as serving Anderson, Blount, Knox, Loudon, and Sevier counties.
+              Unity Care in Knoxville, Tennessee, offers supported living, community participation, and employment supports for people with intellectual and developmental disabilities. Tennessee&rsquo;s provider directory lists it as serving Anderson, Blount, Knox, Loudon, and Sevier counties.
             </p>
-            <a href="https://unitycaretn.com/" className="mt-3 inline-flex text-sm font-semibold text-brand-teal hover:text-brand-navy">Unity Care, I/DD services in Knoxville, Tennessee</a>
+            <a href="https://unitycaretn.com/services/supported-living" className="mt-3 inline-flex text-sm font-semibold text-brand-teal hover:text-brand-navy">Supported Living from Unity Care in Knoxville, Tennessee</a>
+          </Card>
+          <Card>
+            <h3 className="font-semibold text-brand-navy">Substance use treatment: Lighthouse</h3>
+            <p className="mt-3 text-sm leading-7 text-brand-slate">
+              If someone in the family needs help with alcohol or drug use, Lighthouse Rehabilitation Center in Midlothian, Virginia, offers an ASAM Level 2.5 partial hospitalization program for adults.
+            </p>
+            <a href="https://www.lighthouserhc.com/services/partial-hospitalization-php" className="mt-3 inline-flex text-sm font-semibold text-brand-teal hover:text-brand-navy">Lighthouse Rehabilitation Center&rsquo;s partial hospitalization program in Midlothian, VA</a>
           </Card>
         </div>
       </Section>
